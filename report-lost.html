@@ -1,0 +1,22 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Report a lost item — FindMe AI</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="site-header"><div class="container nav">
+      <a class="brand" href="index.html"><span class="brand-mark">F</span><span><b>FindMe AI</b><small>KMITL</small></span></a>
+      <nav class="nav-links"><a class="" href="index.html">Home</a><a class="active" href="report-lost.html">Report Lost</a><a class="" href="report-found.html">Report Found</a><a class="" href="browse.html">Browse Items</a><a class="" href="my-reports.html">My Reports</a></nav>
+      <div class="nav-actions"><a class="btn btn-light" href="browse.html">Search Items</a></div>
+    </div></header>
+<main class="container page-wrap"><div class="page-title"><div class="kicker">REPORT</div><h1>Report a lost item</h1><p>บอกข้อมูลที่จำได้ให้มากที่สุด รูปไม่มีก็แจ้งได้</p></div>
+<div class="form-layout"><form class="form-card" data-report-form data-kind="lost">
+<div class="progress"><span class="active">1. Details</span><span>2. Photo</span><span>3. Location</span><span>4. Review</span></div>
+<div class="form-grid">
+<div class="field"><label>Item name</label><input name="itemName" required placeholder="e.g. House keys"></div>
+<div class="field"><label>Category</label><select name="category"><option>Keys</option><option>Wallet</option><option>Phone</option><option>Bag</option><option>Bottle</option><option>Glasses</option><option>Other</option></select></div>
+<div class="field full"><label>Description</label><textarea name="description" required placeholder="สี ลักษณะ จำนวนชิ้น พวงกุญแจ หรือตำหนิที่สังเกตได้..."></textarea></div>
+<div class="field full"><label>Photo</label><div class="upload-box"><b>Upload a photo</b><p class="meta">JPG / PNG — เลือกรูปเพื่อดู preview</p><label class="btn btn-light">Choose image<input data-upload type="file" accept="image/*" name="photo"></label><div class="upload-preview"></div></div></div>
+<div class="field"><label>Date lost</label><input name="date" type="date" required></div>
+<div class="field"><label>Approx. time</label><input name="time" type="time"></div>
+<div class="field full"><label>Last seen location</label><input name="location" required placeholder="e.g. Faculty of Science, KMITL"></div>
+</div>
+<div class="form-actions"><a class="btn btn-light" href="index.html">Cancel</a><button class="btn btn-dark" type="submit">Search with AI →</button></div>
+</form>
+<aside class="side-card"><div class="side-image"></div><div class="side-body"><h3>Pin where it happened</h3><p>ส่วนแผนที่จริงจะเชื่อมในขั้นต่อไป ตอนนี้ทำ UX/UI ของเว็บและ flow ให้พร้อมก่อน</p><div class="map-box"><span class="map-pin"></span></div></div></aside>
+</div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="app.js"></script></body></html>

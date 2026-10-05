@@ -1,0 +1,10 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Browse Items — FindMe AI</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="site-header"><div class="container nav">
+      <a class="brand" href="index.html"><span class="brand-mark">F</span><span><b>FindMe AI</b><small>KMITL</small></span></a>
+      <nav class="nav-links"><a class="" href="index.html">Home</a><a class="" href="report-lost.html">Report Lost</a><a class="" href="report-found.html">Report Found</a><a class="active" href="browse.html">Browse Items</a><a class="" href="my-reports.html">My Reports</a></nav>
+      <div class="nav-actions"><a class="btn btn-light" href="browse.html">Search Items</a></div>
+    </div></header><main class="container page-wrap"><div class="page-title"><div class="kicker">KMITL LOST & FOUND</div><h1>Browse items</h1><p>ค้นหารายการของหายและของที่พบในมหาวิทยาลัย</p></div>
+<div class="filter-bar"><input id="search" placeholder="Search items, locations, keywords..."><select id="type"><option value="">Lost & Found</option><option>Lost</option><option>Found</option></select><select id="categoryFilter"><option value="">All categories</option><option>Keys</option><option>Wallet</option><option>Glasses</option><option>Bottle</option><option>Phone</option></select></div>
+<div id="itemsGrid" class="card-grid"></div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="app.js"></script><script>
+const p=new URLSearchParams(location.search);const q=p.get('q');if(q){document.getElementById('search').value=q;document.getElementById('search').dispatchEvent(new Event('input'));}
+</script></body></html>
