@@ -81,7 +81,3 @@ img{max-width:100%;display:block}
 .empty-state{padding:36px;border:1px dashed #d9dace;border-radius:20px;color:#777}.filter-bar{flex-wrap:wrap}.filter-bar select{max-width:100%}
 @media(max-width:760px){.overview-map{height:340px}.picker-map{height:330px}.map-panel{padding:16px}.map-panel-head{display:block}.map-legend{margin-top:16px}.map-panel-head h2{font-size:28px}.map-picker-card{position:static}}
 
-/* Actual trained Keys classifier */
-.keys-ai-panel{margin-top:18px;padding:18px;text-align:left;border:1px solid #dce3d2;border-radius:16px;background:#f5f8ef}
-.keys-ai-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.keys-ai-badge{font-size:11px;padding:5px 10px;border-radius:30px;background:#e7eddd;color:#405131}
-.keys-ai-panel .keys-ai-result{font-size:18px;font-weight:750;color:#20291a;margin:14px 0 8px}.keys-ai-panel .keys-ai-note{font-size:13px;line-height:1.6;margin:0 0 12px;color:#65705a}.keys-ai-panel details{font-size:12px;color:#65705a;margin-top:14px}.keys-ai-panel summary{cursor:pointer}.keys-ai-panel details p{font-size:12px;line-height:1.6;margin:10px 0}.keys-ai-apply[hidden]{display:none}.uploaded-item-preview{max-width:100%;max-height:240px;border-radius:14px;display:block;margin:14px auto 0}.keys-ai-saved{font-size:13px;padding:12px 16px;border-radius:12px;background:#edf2e5;color:#3e4e30;line-height:1.6}

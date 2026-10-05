@@ -1,4 +1,4 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Report a lost item — FindMe AI</title><link rel="stylesheet" href="style.css?v=20261006-keys1"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></head><body>
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Report a lost item — FindMe AI</title><link rel="stylesheet" href="style.css?v=20261006-remove-model"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></head><body>
 <header class="site-header"><div class="container nav">
       <a class="brand" href="index.html"><span class="brand-mark">F</span><span><b>FindMe AI</b><small>KMITL</small></span></a>
       <nav class="nav-links"><a class="" href="index.html">Home</a><a class="active" href="report-lost.html">Report Lost</a><a class="" href="report-found.html">Report Found</a><a class="" href="browse.html">Browse Items</a><a class="" href="my-reports.html">My Reports</a></nav>
@@ -11,13 +11,7 @@
 <div class="field"><label>Item name</label><input name="itemName" required placeholder="e.g. House keys"></div>
 <div class="field"><label>Category</label><select name="category"><option>Keys</option><option>Wallet</option><option>Phone</option><option>Bag</option><option>Bottle</option><option>Glasses</option><option>Other</option></select></div>
 <div class="field full"><label>Description</label><textarea name="description" required placeholder="สี ลักษณะ จำนวนชิ้น พวงกุญแจ หรือตำหนิที่สังเกตได้..."></textarea></div>
-<div class="field full"><label>Photo</label><div class="upload-box"><b>Upload a photo</b><p class="meta">JPG / PNG / WebP ไม่เกิน 2 MB — เลือกรูปเพื่อดู preview</p><label class="btn btn-light">Choose image<input data-upload type="file" accept="image/jpeg,image/png,image/webp" name="photo"></label><div class="upload-preview"></div><section class="keys-ai-panel" aria-label="ผลตรวจรูปด้วยโมเดลกุญแจ">
-<div class="keys-ai-heading"><span class="kicker">AI IMAGE CHECK</span><span class="keys-ai-badge">ทดลอง · Keys / Not keys</span></div>
-<p class="keys-ai-result" data-keys-status role="status" aria-live="polite">เลือกรูปเพื่อลองตรวจว่าเป็นกุญแจไหม</p>
-<p class="keys-ai-note" data-keys-note>ตรวจรูปในเบราว์เซอร์ รูปไม่ถูกส่งไปเซิร์ฟเวอร์เพื่อวิเคราะห์</p>
-<button class="btn btn-light keys-ai-apply" data-keys-apply type="button" hidden>ใช้หมวด Keys</button>
-<details><summary>ผลทดสอบและข้อจำกัด</summary><p>ทายถูก 115 / 131 รูป (87.8%) · กุญแจถูก 14 / 15 รูป · ของอื่นถูกทายผิดเป็นกุญแจ 15 / 116 รูป ผลนี้วัดเฉพาะชุดทดสอบของทีม ยังอาจผิดกับรูปใหม่</p><p>แยกประเภทภาพเท่านั้น ไม่ได้ตรวจว่าเป็นของชิ้นเดียวกัน และไม่มีเปอร์เซ็นต์ความมั่นใจ</p></details>
-</section></div></div>
+<div class="field full"><label>Photo</label><div class="upload-box"><b>Upload a photo</b><p class="meta">JPG / PNG — เลือกรูปเพื่อดู preview</p><label class="btn btn-light">Choose image<input data-upload type="file" accept="image/*" name="photo"></label><div class="upload-preview"></div></div></div>
 <div class="field"><label>Date lost</label><input name="date" type="date" required></div>
 <div class="field"><label>Approx. time</label><input name="time" type="time"></div>
 <div class="field full"><label>Last seen location</label><input name="location" required placeholder="e.g. Faculty of Science, KMITL"></div>
@@ -34,4 +28,4 @@
 <a id="pinGoogleLink" class="map-external" target="_blank" rel="noopener noreferrer" hidden>เปิดจุดนี้ใน Google Maps ↗</a>
 <p class="map-privacy">ตำแหน่งของฉันใช้เมื่อกดปุ่มเท่านั้น ข้อมูลจะบันทึกเมื่อส่งรายงาน</p>
 </div></aside>
-</div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="keys-ai.js?v=20261006-keys1"></script><script src="app.js?v=20261006-keys1"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="map.js"></script></body></html>
+</div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="app.js?v=20261006-remove-model"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="map.js"></script></body></html>

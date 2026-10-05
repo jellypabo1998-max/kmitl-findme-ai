@@ -123,74 +123,48 @@ function setupBrowse() {
 /* =========================================
    IMAGE UPLOAD
 ========================================= */
-function validKeysClassification(value) {
-  return value && value.modelId === 'keys-hog-svm-v1'
-    && ['keys','not_keys'].includes(value.label)
-    && typeof value.margin === 'number' && Number.isFinite(value.margin);
-}
 function setupUpload() {
-  document.querySelectorAll('[data-upload]').forEach(input => {
-    const box = input.closest('.upload-box');
-    const preview = box?.querySelector('.upload-preview');
-    const status = box?.querySelector('[data-keys-status]');
-    const note = box?.querySelector('[data-keys-note]');
-    const apply = box?.querySelector('[data-keys-apply]');
-    let generation = 0;
-    apply?.addEventListener('click', () => {
-      if (validKeysClassification(input._keysResult) && input._keysResult.label === 'keys') {
-        const category = input.form?.querySelector('[name="category"]');
-        if (category) { category.value = 'Keys'; category.dispatchEvent(new Event('input', {bubbles:true})); }
-        apply.hidden = true;
-        note.textContent = 'เลือกหมวด Keys แล้ว — ตรวจสอบและแก้หมวดเองได้';
-      }
-    });
-    input.addEventListener('change', () => {
-      const current = ++generation;
-      const file = input.files?.[0];
-      input._keysResult = null; input._keysTask = Promise.resolve(null);
-      if (preview) preview.replaceChildren();
-      if (apply) apply.hidden = true;
-      if (!file) { if (status) status.textContent = 'เลือกรูปเพื่อลองตรวจว่าเป็นกุญแจไหม'; return; }
-      if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2 * 1024 * 1024) {
-        if (status) status.textContent = 'ใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB';
-        if (note) note.textContent = 'ยังไม่ได้ตรวจรูปนี้ กรุณาเลือกไฟล์ใหม่';
-        return;
-      }
-      if (status) status.textContent = 'กำลังตรวจรูป…';
-      if (note) note.textContent = 'โมเดลทดลองกำลังประมวลผลในเบราว์เซอร์';
-      input._keysTask = new Promise(resolve => {
-        const reader = new FileReader();
-        const failed = () => {
-          if (current === generation) {
-            if (status) status.textContent = 'ตรวจรูปไม่ได้';
-            if (note) note.textContent = 'ลองรูปอื่น หรือเลือกหมวดด้วยตัวเองแล้วแจ้งรายงานได้';
+  document
+    .querySelectorAll('[data-upload]')
+    .forEach(input => {
+      input.addEventListener(
+        'change',
+        () => {
+          const file =
+            input.files?.[0];
+          const preview =
+            input
+              .closest('.upload-box')
+              ?.querySelector(
+                '.upload-preview'
+              );
+          if (
+            !file ||
+            !preview
+          ) {
+            return;
           }
-          resolve(null);
-        };
-        reader.onerror = failed;
-        reader.onload = async () => {
-          if (current !== generation) { resolve(null); return; }
-          const image = document.createElement('img');
-          image.src = reader.result; image.alt = 'Uploaded item preview'; image.className = 'uploaded-item-preview';
-          preview?.append(image);
-          try {
-            if (!window.FindMeKeys) throw new Error('Model unavailable');
-            const result = await window.FindMeKeys.classifyDataUrl(reader.result);
-            if (current !== generation) { resolve(null); return; }
-            if (!validKeysClassification(result)) throw new Error('Invalid result');
-            input._keysResult = result;
-            if (status) status.textContent = result.label === 'keys' ? '🔑 โมเดลคาดว่าเป็นกุญแจ · Keys' : 'โมเดลคาดว่าไม่ใช่กุญแจ · Not keys';
-            if (note) note.textContent = result.label === 'keys'
-              ? 'ตรวจสอบรูปอีกครั้ง แล้วกดใช้หมวด Keys ได้ ผลนี้ยังอาจผิด'
-              : 'เลือกหมวดของด้วยตัวเองได้ หากเป็นกุญแจจริง โมเดลอาจทายผิด';
-            if (apply) apply.hidden = result.label !== 'keys';
-            resolve(result);
-          } catch (_) { failed(); }
-        };
-        reader.readAsDataURL(file);
-      });
+          const reader =
+            new FileReader();
+          reader.onload = () => {
+            preview.innerHTML = `
+              <img
+                src="${reader.result}"
+                alt="Uploaded item preview"
+                style="
+                  max-width:100%;
+                  max-height:240px;
+                  border-radius:14px;
+                  display:block;
+                  margin-top:14px;
+                "
+              >
+            `;
+          };
+          reader.readAsDataURL(file);
+        }
+      );
     });
-  });
 }
 /* =========================================
    REPORT FORM
@@ -215,22 +189,18 @@ function setupReportForm() {
     const point = validCoordinates(data.latitude, data.longitude);
     if (!point) { fail('กรุณาปักหมุดบนแผนที่ หรือกรอกพิกัดให้ถูกต้องก่อนส่งรายงาน'); return; }
     data.latitude = point.lat; data.longitude = point.lng;
-    const photoInput = form.querySelector('[data-upload]');
-    const photoFile = photoInput?.files?.[0];
-    const classificationTask = photoInput?._keysTask || Promise.resolve(null);
+    const photoFile = form.querySelector('[data-upload]')?.files?.[0];
     if (photoFile && (!/^image\/(jpeg|png|webp)$/.test(photoFile.type) || photoFile.size > 2 * 1024 * 1024)) {
       fail('กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB'); return;
     }
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true;
-    const saveAndRedirect = async (photo = '') => {
-      const predicted = photo ? await classificationTask.catch(() => null) : null;
-      const keysClassification = validKeysClassification(predicted) ? predicted : null;
+    const saveAndRedirect = (photo = '') => {
       try {
         // Parse before writing so malformed existing data is never overwritten.
         const list = readReports();
         const report = {
-          ...data, photo, keysClassification, id: Date.now(), kind: form.dataset.kind,
+          ...data, photo, id: Date.now(), kind: form.dataset.kind,
           status: form.dataset.kind === 'lost' ? 'Searching' : 'Submitted'
         };
         localStorage.setItem('kmitl_reports', JSON.stringify([report, ...list]));
@@ -586,15 +556,6 @@ function renderSubmittedItem(
       </div>
     </div>
   `;
-  if (validKeysClassification(report.keysClassification)) {
-    const line = document.createElement('p');
-    line.className = 'keys-ai-saved';
-    line.textContent = report.keysClassification.label === 'keys'
-      ? 'AI ตรวจรูป: คาดว่าเป็นกุญแจ (Keys) · รุ่นทดลอง แยกประเภทภาพเท่านั้น'
-      : 'AI ตรวจรูป: คาดว่าไม่ใช่กุญแจ (Not keys) · รุ่นทดลอง แยกประเภทภาพเท่านั้น';
-    target.append(line);
-  }
-
 }
 /* =========================================
    RENDER AI MATCHES
