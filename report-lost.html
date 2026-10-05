@@ -1,13 +1,13 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Report a lost item — FindMe AI</title><link rel="stylesheet" href="style.css"></head><body>
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Report a lost item — FindMe AI</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></head><body>
 <header class="site-header"><div class="container nav">
       <a class="brand" href="index.html"><span class="brand-mark">F</span><span><b>FindMe AI</b><small>KMITL</small></span></a>
       <nav class="nav-links"><a class="" href="index.html">Home</a><a class="active" href="report-lost.html">Report Lost</a><a class="" href="report-found.html">Report Found</a><a class="" href="browse.html">Browse Items</a><a class="" href="my-reports.html">My Reports</a></nav>
       <div class="nav-actions"><a class="btn btn-light" href="browse.html">Search Items</a></div>
     </div></header>
 <main class="container page-wrap"><div class="page-title"><div class="kicker">REPORT</div><h1>Report a lost item</h1><p>บอกข้อมูลที่จำได้ให้มากที่สุด รูปไม่มีก็แจ้งได้</p></div>
-<div class="form-layout"><form class="form-card" data-report-form data-kind="lost">
+<div class="form-layout"><form class="form-card" id="reportForm" data-report-form data-kind="lost">
 <div class="progress"><span class="active">1. Details</span><span>2. Photo</span><span>3. Location</span><span>4. Review</span></div>
-<div class="form-grid">
+<input type="hidden" name="latitude"><input type="hidden" name="longitude"><div class="form-grid">
 <div class="field"><label>Item name</label><input name="itemName" required placeholder="e.g. House keys"></div>
 <div class="field"><label>Category</label><select name="category"><option>Keys</option><option>Wallet</option><option>Phone</option><option>Bag</option><option>Bottle</option><option>Glasses</option><option>Other</option></select></div>
 <div class="field full"><label>Description</label><textarea name="description" required placeholder="สี ลักษณะ จำนวนชิ้น พวงกุญแจ หรือตำหนิที่สังเกตได้..."></textarea></div>
@@ -18,5 +18,14 @@
 </div>
 <div class="form-actions"><a class="btn btn-light" href="index.html">Cancel</a><button class="btn btn-dark" type="submit">Search with AI →</button></div>
 </form>
-<aside class="side-card"><div class="side-image"></div><div class="side-body"><h3>Pin where it happened</h3><p>ส่วนแผนที่จริงจะเชื่อมในขั้นต่อไป ตอนนี้ทำ UX/UI ของเว็บและ flow ให้พร้อมก่อน</p><div class="map-box"><span class="map-pin"></span></div></div></aside>
-</div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="app.js"></script></body></html>
+<aside class="side-card map-picker-card">
+<div class="side-body"><div class="kicker">PICK A LOCATION</div><h3>Where did it happen?</h3>
+<p>แตะบนแผนที่เพื่อปักหมุด ลากหมุดเพื่อปรับจุด แล้วกรอกชื่ออาคารหรือจุดสังเกตในช่อง Location</p>
+<div id="reportMap" class="live-map picker-map" aria-label="แผนที่เลือกตำแหน่งของหายหรือของที่พบ"></div>
+<div class="map-toolbar"><button type="button" class="btn btn-light" id="useMyLocation">⌖ ใช้ตำแหน่งของฉัน</button><button type="button" class="btn btn-light" id="resetCampus">กลับ KMITL</button></div>
+<p id="pinStatus" class="map-status" role="status" aria-live="polite">ยังไม่เลือกตำแหน่ง — แตะบนแผนที่เพื่อเริ่ม</p>
+<details class="coordinate-details"><summary>กรอกพิกัดเอง</summary><div class="coordinate-grid"><label>Latitude<input id="pinLatitude" type="number" min="-90" max="90" step="any" placeholder="13.727478"></label><label>Longitude<input id="pinLongitude" type="number" min="-180" max="180" step="any" placeholder="100.775952"></label></div><button id="applyCoordinates" type="button" class="btn btn-light">ปักหมุดจากพิกัด</button></details>
+<a id="pinGoogleLink" class="map-external" target="_blank" rel="noopener noreferrer" hidden>เปิดจุดนี้ใน Google Maps ↗</a>
+<p class="map-privacy">ตำแหน่งของฉันใช้เมื่อกดปุ่มเท่านั้น ข้อมูลจะบันทึกเมื่อส่งรายงาน</p>
+</div></aside>
+</div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="app.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="map.js"></script></body></html>

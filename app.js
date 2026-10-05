@@ -51,44 +51,34 @@ const ITEMS = [
 /* =========================================
    BROWSE ITEMS
 ========================================= */
+function allBrowseItems() {
+  let saved = [];
+  try { saved = readReports(); } catch { /* Keep the demo catalog usable. */ }
+  return [...saved.filter(r => r.status !== 'Returned').map(r => ({...r,
+    name: r.itemName, type: reportKind(r) === 'found' ? 'Found' : 'Lost',
+    time: [r.date, r.time].filter(Boolean).join(' '), icon: getIcon(r.category)
+  })), ...ITEMS.map(item => ({...item, isDemo: true}))];
+}
 function card(item) {
-  return `
-    <article class="item-card">
-      <div class="item-photo">
-        ${item.icon}
-      </div>
-      <div class="item-top">
-        <h3>
-          ${item.name}
-        </h3>
-        <span
-          class="badge ${
-            item.type === 'Found'
-              ? 'found'
-              : 'lost'
-          }"
-        >
-          ${item.type}
-        </span>
-      </div>
-      <div class="meta">
-        ${item.category} • ${item.location}
-      </div>
-      <div class="meta">
-        ${item.time}
-      </div>
-      <a
-        class="text-link"
-        href="${
-          item.type === 'Found'
-            ? 'verify.html'
-            : 'matches.html'
-        }"
-      >
-        View details →
-      </a>
-    </article>
-  `;
+  const photo = safePhoto(item.photo);
+  const point = validCoordinates(item.latitude, item.longitude);
+  return `<article class="item-card">
+    <div class="item-photo">${photo ? `<img src="${escapeHTML(photo)}" alt="${escapeHTML(item.name)}" style="width:100%;height:100%;object-fit:cover">` : item.icon}</div>
+    <div class="item-top"><h3>${escapeHTML(item.name)}</h3><span class="badge ${item.type === 'Found' ? 'found' : 'lost'}">${item.type}</span></div>
+    <div class="meta">${escapeHTML(item.category)} • ${escapeHTML(item.location)}</div>
+    <div class="meta">${escapeHTML(item.time)}</div>
+    <div class="meta">${item.isDemo ? 'ข้อมูลตัวอย่าง' : 'รายงานที่บันทึก'}</div>
+    ${point ? `<a class="text-link" href="${googleMapsLink(point)}" target="_blank" rel="noopener noreferrer">📍 ดูตำแหน่งจริง ↗</a><br>` : '<div class="meta">ยังไม่มีพิกัด</div>'}
+    <a class="text-link" href="${item.id ? reportLink(item) : item.type === 'Found' ? 'verify.html' : 'matches.html'}">View details →</a>
+  </article>`;
+}
+function validCoordinates(latitude, longitude) {
+  if (latitude === '' || longitude === '' || latitude == null || longitude == null) return null;
+  const lat = Number(latitude), lng = Number(longitude);
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? {lat, lng} : null;
+}
+function googleMapsLink(point) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(point.lat + ',' + point.lng);
 }
 function renderItems(
   target = 'itemsGrid',
@@ -104,61 +94,30 @@ function renderItems(
    SEARCH / BROWSE
 ========================================= */
 function setupBrowse() {
-  const search =
-    document.getElementById('search');
-  const type =
-    document.getElementById('type');
-  const category =
-    document.getElementById('categoryFilter');
+  const search = document.getElementById('search');
+  const type = document.getElementById('type');
+  const category = document.getElementById('categoryFilter');
+  const locationFilter = document.getElementById('locationFilter');
+  if (!search) return;
+  const items = allBrowseItems();
+  search.value = new URLSearchParams(location.search).get('q') || '';
+  if (locationFilter) {
+    const locations = [...new Set(items.map(item => item.location).filter(Boolean))].sort();
+    locations.forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; locationFilter.append(option); });
+  }
   const run = () => {
-    const q =
-      (search?.value || '')
-      .toLowerCase();
-    const t =
-      type?.value || '';
-    const c =
-      category?.value || '';
-    const out =
-      ITEMS.filter(item =>
-        (
-          !q ||
-          (
-            `${item.name}
-             ${item.category}
-             ${item.location}`
-          )
-          .toLowerCase()
-          .includes(q)
-        )
-        &&
-        (
-          !t ||
-          item.type === t
-        )
-        &&
-        (
-          !c ||
-          item.category === c
-        )
-      );
-    renderItems(
-      'itemsGrid',
-      out
-    );
+    const q = search.value.trim().toLowerCase();
+    const out = items.filter(item => (!q || `${item.name} ${item.category} ${item.location}`.toLowerCase().includes(q))
+      && (!type?.value || item.type === type.value)
+      && (!category?.value || item.category === category.value)
+      && (!locationFilter?.value || item.location === locationFilter.value));
+    renderItems('itemsGrid', out);
+    const count = document.getElementById('browseCount');
+    if (count) count.textContent = `${out.length} รายการ · ${out.filter(i => validCoordinates(i.latitude, i.longitude)).length} รายการมีหมุด`;
+    if (!out.length) document.getElementById('itemsGrid').innerHTML = '<p class="empty-state">ไม่พบรายการ ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>';
+    if (typeof updateOverviewMap === 'function') updateOverviewMap('browseMap', out);
   };
-  [
-    search,
-    type,
-    category
-  ]
-  .forEach(element => {
-    if (element) {
-      element.addEventListener(
-        'input',
-        run
-      );
-    }
-  });
+  [search, type, category, locationFilter].forEach(element => element?.addEventListener('input', run));
   run();
 }
 /* =========================================
@@ -227,6 +186,9 @@ function setupReportForm() {
       data[field] = String(data[field] || '').trim();
       if (!data[field]) { fail('กรุณากรอกชื่อ รายละเอียด และสถานที่ให้ครบ'); return; }
     }
+    const point = validCoordinates(data.latitude, data.longitude);
+    if (!point) { fail('กรุณาปักหมุดบนแผนที่ หรือกรอกพิกัดให้ถูกต้องก่อนส่งรายงาน'); return; }
+    data.latitude = point.lat; data.longitude = point.lng;
     const photoFile = form.querySelector('[data-upload]')?.files?.[0];
     if (photoFile && (!/^image\/(jpeg|png|webp)$/.test(photoFile.type) || photoFile.size > 2 * 1024 * 1024)) {
       fail('กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB'); return;
@@ -631,6 +593,13 @@ function renderMatches() {
     }
     return;
   }
+  const point = validCoordinates(report.latitude, report.longitude);
+  if (point) {
+    const pin = document.createElement('a'); pin.className = 'text-link';
+    pin.href = googleMapsLink(point); pin.target = '_blank'; pin.rel = 'noopener noreferrer';
+    pin.textContent = `📍 ${point.lat.toFixed(6)}, ${point.lng.toFixed(6)} — เปิด Google Maps ↗`;
+    document.getElementById('submittedItemContent')?.append(pin);
+  }
   const candidates = getMatchCandidates(report);
   const another = document.getElementById('reportAnother');
   if (another) {
@@ -975,7 +944,7 @@ document.addEventListener(
   () => {
     renderItems(
       'recentGrid',
-      ITEMS.slice(0,6)
+      allBrowseItems().slice(0,6)
     );
     setupBrowse();
     setupUpload();
