@@ -1,10 +1,208 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Matches — FindMe AI</title><link rel="stylesheet" href="style.css"></head><body>
-<header class="site-header"><div class="container nav">
-      <a class="brand" href="index.html"><span class="brand-mark">F</span><span><b>FindMe AI</b><small>KMITL</small></span></a>
-      <nav class="nav-links"><a class="" href="index.html">Home</a><a class="" href="report-lost.html">Report Lost</a><a class="" href="report-found.html">Report Found</a><a class="" href="browse.html">Browse Items</a><a class="" href="my-reports.html">My Reports</a></nav>
-      <div class="nav-actions"><a class="btn btn-light" href="browse.html">Search Items</a></div>
-    </div></header><main class="container page-wrap"><div class="page-title"><div class="kicker">AI MATCHING</div><h1>Possible matches</h1><p>ตัวอย่างการจัดอันดับจากรูป สถานที่ เวลา และรายละเอียด</p></div>
-<div class="match-list">
-<article class="match-card"><div class="match-photo">🔑</div><div><h3>Found keyring near Science Building</h3><p>3 silver keys • blue tag • found today</p><div class="metrics"><div class="metric"><span>Image</span><b>96%</b></div><div class="metric"><span>Location</span><b>91%</b></div><div class="metric"><span>Time</span><b>88%</b></div><div class="metric"><span>Description</span><b>95%</b></div></div></div><div class="score"><strong>94%</strong><a class="btn btn-dark" href="verify.html">View match</a></div></article>
-<article class="match-card"><div class="match-photo">🔑</div><div><h3>Found keys near cafeteria</h3><p>2 silver keys • black strap • yesterday</p><div class="metrics"><div class="metric"><span>Image</span><b>78%</b></div><div class="metric"><span>Location</span><b>62%</b></div><div class="metric"><span>Time</span><b>80%</b></div><div class="metric"><span>Description</span><b>71%</b></div></div></div><div class="score"><strong>74%</strong><a class="btn btn-light" href="browse.html">Not this item</a></div></article>
-</div></main><footer class="footer"><div class="container footer-row"><div><b>FindMe AI — KMITL</b><div style="color:#888;margin-top:4px">Lost & Found, redesigned for campus.</div></div><small>Vanilla HTML / CSS / JavaScript prototype</small></div></footer><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="th">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+
+<title>AI Matches — FindMe AI</title>
+
+<link
+  rel="stylesheet"
+  href="style.css"
+>
+
+</head>
+
+
+<body>
+
+
+<header class="site-header">
+
+  <div class="container nav">
+
+
+    <a
+      class="brand"
+      href="index.html"
+    >
+
+      <span class="brand-mark">
+        F
+      </span>
+
+      <span>
+
+        <b>FindMe AI</b>
+
+        <small>KMITL</small>
+
+      </span>
+
+    </a>
+
+
+    <nav class="nav-links">
+
+      <a href="index.html">
+        Home
+      </a>
+
+      <a href="report-lost.html">
+        Report Lost
+      </a>
+
+      <a href="report-found.html">
+        Report Found
+      </a>
+
+      <a href="browse.html">
+        Browse Items
+      </a>
+
+      <a href="my-reports.html">
+        My Reports
+      </a>
+
+    </nav>
+
+
+    <div class="nav-actions">
+
+      <a
+        class="btn btn-light"
+        href="browse.html"
+      >
+        Search Items
+      </a>
+
+    </div>
+
+
+  </div>
+
+</header>
+
+
+
+<main class="container page-wrap">
+
+
+  <!-- TITLE -->
+
+  <div class="page-title">
+
+    <div class="kicker">
+      AI MATCHING
+    </div>
+
+    <h1>
+      Possible matches
+    </h1>
+
+    <p>
+      ระบบต้นแบบเปรียบเทียบหมวดหมู่ รายละเอียด และสถานที่
+      เพื่อจัดอันดับรายการที่มีโอกาสตรงกัน เปอร์เซ็นต์เป็นคะแนนสาธิต
+      การเปรียบเทียบรูปยังจำลอง และยังไม่ได้ใช้วันเวลาในการคำนวณ
+    </p>
+
+  </div>
+
+
+
+  <!-- USER SUBMITTED ITEM -->
+
+  <section
+    id="submittedItem"
+    class="form-card"
+    style="margin-bottom:24px;"
+  >
+
+    <div id="submittedItemContent"></div>
+
+  </section>
+
+
+
+  <!-- AI SUMMARY -->
+
+  <div id="matchSummary"></div>
+
+
+
+  <!-- MATCH RESULTS -->
+
+  <div
+    id="matchList"
+    class="match-list"
+  ></div>
+
+
+
+  <!-- BUTTONS -->
+
+  <div
+    class="form-actions"
+    style="margin-top:24px;"
+  >
+
+    <a
+      class="btn btn-light"
+      href="report-found.html"
+      id="reportAnother"
+    >
+      ← Report another found item
+    </a>
+
+    <a
+      class="btn btn-dark"
+      href="browse.html"
+    >
+      Browse all items →
+    </a>
+
+  </div>
+
+
+</main>
+
+
+
+<footer class="footer">
+
+  <div class="container footer-row">
+
+    <div>
+
+      <b>
+        FindMe AI — KMITL
+      </b>
+
+      <div
+        style="color:#888;margin-top:4px"
+      >
+        Lost & Found, redesigned for campus.
+      </div>
+
+    </div>
+
+    <small>
+      Vanilla HTML / CSS / JavaScript prototype
+    </small>
+
+  </div>
+
+</footer>
+
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
