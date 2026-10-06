@@ -943,6 +943,15 @@ function setupVerify() {
 function setupLogin() {
   const form = document.getElementById('loginForm');
   if (!form) return;
+  document.getElementById('tryDemo')?.addEventListener('click', () => {
+    try {
+      localStorage.setItem('kmitl_user', JSON.stringify({name:'FindMe Demo',email:'demo@example.com'}));
+      location.href = 'index.html';
+    } catch {
+      const error = document.getElementById('loginError');
+      error.textContent = 'บันทึกไม่สำเร็จ กรุณาอนุญาตการเก็บข้อมูลในเบราว์เซอร์'; error.hidden = false;
+    }
+  });
   form.addEventListener('submit', event => {
     event.preventDefault();
     const name = document.getElementById('loginUsername').value.trim();
