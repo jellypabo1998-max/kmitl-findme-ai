@@ -230,7 +230,7 @@ function setupReportForm() {
           status: form.dataset.kind === 'lost' ? 'Searching' : 'Submitted'
         };
         localStorage.setItem('kmitl_reports', JSON.stringify([report, ...list]));
-        location.href = 'matches.html?report=' + encodeURIComponent(report.id);
+        window.FindMeNavigate('matches.html?report=' + encodeURIComponent(report.id));
       } catch (err) {
         button.disabled = false;
         fail('บันทึกไม่สำเร็จ พื้นที่เก็บข้อมูลอาจเต็มหรือข้อมูลเดิมอ่านไม่ได้ ลองใช้รูปที่เล็กลง ข้อมูลเดิมยังอยู่');

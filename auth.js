@@ -6,12 +6,36 @@ window.FindMeAuthReady = (async () => {
   const key='findme_session_v1';
   const isEntry=/\/(login|register)\.html$/.test(location.pathname);
   const isHome=/\/(index\.html)?$/.test(location.pathname);
+  const navigationKey='findme_next_page_v1';
   let internalEntry=false;
-  try {internalEntry=!!document.referrer&&new URL(document.referrer).origin===location.origin;} catch {}
-  const navigation=typeof performance!=='undefined'?performance.getEntriesByType('navigation')[0]?.type:'navigate';
-  // Bookmarks and outside links start on Home; links inside the app, reloads,
-  // and Back/Forward keep the page the member intentionally selected.
-  const startAtHome=!isHome&&!internalEntry&&(!navigation||navigation==='navigate');
+  try {
+    const next=JSON.parse(sessionStorage.getItem(navigationKey)||'null');
+    sessionStorage.removeItem(navigationKey);
+    internalEntry=next?.path===location.pathname&&Date.now()-next.at>=0&&Date.now()-next.at<30000;
+  } catch {}
+  const rememberNavigation=href=>{
+    try {
+      const target=new URL(href,location.href);
+      if(target.origin===location.origin&&target.pathname!==location.pathname){
+        sessionStorage.setItem(navigationKey,JSON.stringify({path:target.pathname,at:Date.now()}));
+      }
+    } catch {}
+  };
+  window.FindMeNavigate=href=>{rememberNavigation(href);location.assign(href);};
+  document.addEventListener('click',event=>{
+    const link=event.target.closest?.('a[href]');
+    if(link&&!event.defaultPrevented&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey&&event.button===0&&(!link.target||link.target==='_self')&&!link.hasAttribute('download'))rememberNavigation(link.href);
+  });
+  document.addEventListener('submit',event=>{
+    const target=event.target;
+    if(target.method?.toLowerCase()==='get')rememberNavigation(target.action);
+  });
+  // Only a fresh navigation selected within this tab may open a subpage.
+  // Restored tabs, saved links, and reloads start at Home after session validation.
+  const startAtHome=!isHome&&!internalEntry;
+  window.addEventListener('pageshow',event=>{
+    if(event.persisted&&!isHome&&window.FindMeUser)location.replace('index.html');
+  });
   const config=window.FINDME_AUTH_API || '';
   const api=config.replace(/\/$/,'');
   let session=null;
