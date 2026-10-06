@@ -19,8 +19,11 @@ KMITL FindMe AI — Static HTML Website
 3) เปิด index.html หรือใช้ Live Server
 
 หมายเหตุ:
-- ตอนนี้เป็น UX/UI prototype + interactions ฝั่ง browser
-- Report form บันทึกตัวอย่างลง localStorage
+- สมัครสมาชิกและล็อกอินผ่าน account API ที่กำหนดใน auth-config.js
+- Report form บันทึกรายงานและรูปลง localStorage ของเบราว์เซอร์เครื่องนั้น
 - AI matching ยังเป็น mock
-- Map ยังเป็น placeholder
+- Map ใช้ Leaflet และ OpenStreetMap พร้อมหมุดพิกัดจากรายงาน
+- หน้า Browse Items: แตะหมุด แล้วแตะชื่อสิ่งของเพื่อขยายรูปและรายละเอียดในกล่องตรงหมุดเดิม กด “ย่อรายละเอียด” เพื่อหุบกลับ
+- การ์ดรายการใช้ View details เพื่อเปิดรายละเอียดบนหน้าเดิม
+- ปุ่มตำแหน่งปัจจุบันต้องเปิดผ่าน HTTPS และอนุญาตตำแหน่งให้เว็บไซต์
 - รูป campus ในหน้าเว็บอ้างอิงรูปจากเว็บไซต์ KMITL ผ่าน URL ภายนอก
