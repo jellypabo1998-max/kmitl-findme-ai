@@ -6,7 +6,7 @@
 <title>My Reports — FindMe AI</title>
 <link rel="stylesheet" href="style.css?v=20261006-lalana2">
 <style>
-/* ===== ส่วนเสริมเฉพาะหน้านี้ (ใช้ตัวแปรสี/ฟอนต์จาก style.css?v=20261006-lalana2) ===== */
+/* ===== ส่วนเสริมเฉพาะหน้านี้ (ใช้ตัวแปรสี/ฟอนต์จาก style.css) ===== */
 .mr-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
 .mr-tab{border:1px solid #d4d4cf;background:#fff;color:#555;padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;cursor:pointer}
 .mr-tab:hover{border-color:var(--ink)}
@@ -73,7 +73,9 @@ html{overflow-y:scroll}
       <a href="browse.html">Browse Items</a>
       <a href="my-reports.html" class="active">My Reports</a>
     </nav>
-    <div class="nav-actions"></div>
+    <div class="nav-actions">
+      <a class="btn btn-light" href="browse.html">Search Items</a>
+    </div>
   </div>
 </header>
 
@@ -100,7 +102,7 @@ html{overflow-y:scroll}
 (() => {
   'use strict';
 
-  /* ---- ฟังก์ชันช่วย (คัดลอกจาก app.js?v=20261006-lalana2 เพื่อให้ไฟล์นี้รันได้ด้วยตัวเอง) ---- */
+  /* ---- ฟังก์ชันช่วย (คัดลอกจาก app.js เพื่อให้ไฟล์นี้รันได้ด้วยตัวเอง) ---- */
   const normalize = v => String(v || '').trim().toLowerCase();
   const escapeHTML = v => String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   const reportKind = r => r.kind || (r.status === 'Submitted' ? 'found' : 'lost');
@@ -121,7 +123,7 @@ html{overflow-y:scroll}
   const PASS_SCORE = 60;
 
   /* สถานะ: Searching → Found (กด I found it) → Verified (ผ่าน Verify) → Returned (ได้ของคืน)
-     'Returned' ถูกซ่อนจาก Browse/Matches อัตโนมัติโดย app.js?v=20261006-lalana2 เดิม */
+     'Returned' ถูกซ่อนจาก Browse/Matches อัตโนมัติโดย app.js เดิม */
   const STATUS = {
     Searching: ['lost', 'กำลังตามหา'],
     'Potential Match': ['found', 'มีรายการที่ตรง'],
