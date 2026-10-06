@@ -940,59 +940,11 @@ function setupVerify() {
 /* =========================================
    AUTH SYSTEM (PROTOTYPE)
 ========================================= */
-function setupLogin() {
-  const form = document.getElementById('loginForm');
-  if (!form) return;
-  document.getElementById('tryDemo')?.addEventListener('click', () => {
-    try {
-      localStorage.setItem('kmitl_user', JSON.stringify({name:'FindMe Demo',email:'demo@example.com'}));
-      location.href = 'index.html';
-    } catch {
-      const error = document.getElementById('loginError');
-      error.textContent = 'บันทึกไม่สำเร็จ กรุณาอนุญาตการเก็บข้อมูลในเบราว์เซอร์'; error.hidden = false;
-    }
-  });
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    const name = document.getElementById('loginUsername').value.trim();
-    const email = document.getElementById('loginEmail').value.trim();
-    const error = document.getElementById('loginError');
-    if (!name) {
-      error.textContent = 'กรุณากรอกชื่อผู้ใช้'; error.hidden = false; return;
-    }
-    try {
-      localStorage.setItem('kmitl_user', JSON.stringify({name, email}));
-      location.href = 'index.html';
-    } catch {
-      error.textContent = 'บันทึกไม่สำเร็จ กรุณาอนุญาตการเก็บข้อมูลในเบราว์เซอร์'; error.hidden = false;
-    }
-  });
-}
-function readUser() {
-  try {
-    const user = JSON.parse(localStorage.getItem('kmitl_user') || 'null');
-    return user && typeof user.name === 'string' && user.name.trim() && typeof user.email === 'string' ? user : null;
-  } catch { return null; }
-}
+function readUser() { return window.FindMeUser || null; }
 function setupAuth() {
   const user = readUser();
   const userJSON = user ? JSON.stringify(user) : null;
-  const path = window.location.pathname;
-  const isLoginPage = path.includes('login.html');
-
-  // 1. ระบบบังคับล็อกอิน
-  if (!userJSON) {
-    if (!isLoginPage) {
-      window.location.href = 'login.html';
-      return false; 
-    }
-  } else {
-    if (isLoginPage) {
-      window.location.href = 'index.html';
-      return;
-    }
-  }
-
+  const isLoginPage = /\/(login|register)\.html$/.test(location.pathname);
   // 2. จัดการเมนู Dropdown
   if (!isLoginPage) {
     const navActionsList = document.querySelectorAll('.nav-actions');
@@ -1009,6 +961,7 @@ function setupAuth() {
                 <b>${escapeHTML(user.name)}</b>
                 <small>${escapeHTML(user.email)}</small>
               </div>
+              <a class="btn btn-light btn-block" href="account.html" style="justify-content:center;">My Account</a>
               <a class="btn btn-light btn-block" href="my-reports.html" style="justify-content:center;">My Reports</a>
               <button class="btn btn-light btn-block" id="logoutBtn" style="color: #c8432f; border-color: #f5c6cb; justify-content:center;">Log out</button>
             </div>
@@ -1031,9 +984,10 @@ function setupAuth() {
           }
         });
 
-        logoutBtn?.addEventListener('click', () => {
-          localStorage.removeItem('kmitl_user');
-          window.location.href = 'login.html'; 
+        logoutBtn?.addEventListener('click', async () => {
+          logoutBtn.disabled = true;
+          try { await window.FindMeLogout(); }
+          catch (err) { logoutBtn.disabled = false; logoutBtn.textContent = 'ลองออกจากระบบอีกครั้ง'; }
         });
       }
     });
@@ -1136,9 +1090,10 @@ function setupReportSteps() {
 ========================================= */
 document.addEventListener(
   'DOMContentLoaded',
-  () => {
-    setupLogin();
-    if (!setupAuth()) return;
+  async () => {
+    await window.FindMeAuthReady;
+    if (!window.FindMeUser) return;
+    setupAuth();
     setupReportSteps(); 
     renderItems(
       'recentGrid',
