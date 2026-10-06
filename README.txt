@@ -28,17 +28,5 @@ KMITL FindMe AI — Static HTML Website
 - ปุ่มตำแหน่งปัจจุบันต้องเปิดผ่าน HTTPS และอนุญาตตำแหน่งให้เว็บไซต์
 - รูป campus ในหน้าเว็บอ้างอิงรูปจากเว็บไซต์ KMITL ผ่าน URL ภายนอก
 
-ค้นหาด้วยรูป:
-- Home / Browse Items → ค้นหาด้วยรูป
-- CLIP image embeddings เทียบกับรูปรายงานในเบราว์เซอร์เครื่องนี้; ไม่มีข้อมูลตัวอย่างปน
-- คะแนน cosine similarity ใช้เรียงภาพ ไม่ใช่ความน่าจะเป็นว่าเป็นของชิ้นเดียวกัน
-- โมเดลเพื่อน Roboflow: ai-lost-found/1; ตั้ง ROBOFLOW_API_KEY และ ROBOFLOW_INFERENCE_URL เฉพาะ Environment ของเซิร์ฟเวอร์
-- รูปจะถูกส่งไปตัวรัน Roboflow Inference ของเรา เมื่อผู้ใช้เลือกให้ทายหมวดด้วยเท่านั้น
-- หากยังไม่มีตัวรัน AI หรือ API key หน้าเว็บแจ้งตรง ๆ และยังค้นหารูปคล้ายในเครื่องได้
-- สคริปต์ใช้ CLIP pretrained สำหรับรูปคล้าย แยกจาก ViT ที่เพื่อนเทรนสำหรับหมวด
-
-Self-hosted แบบไม่ใช้เครดิต Roboflow:
-- ดู SELFHOST_TH.md และ selfhost.compose.yaml
-- ไม่มี Serverless Cloud API fallback
-- ยังต้องมีเครื่องรัน + API key เพื่อโหลดโมเดลเพื่อน
-- ยังไม่ได้ทดสอบโมเดลจริงบน Docker และยังไม่มี endpoint สำหรับเว็บจริง
+- นำหน้าค้นหาด้วยรูปที่เพิ่มแยกออกแล้ว; ใช้ Report Found และ Matches เดิม
+- ลิงก์หน้าค้นหารูปเก่ากลับไปหน้า Home และไม่โหลดโมเดล CLIP/Roboflow
