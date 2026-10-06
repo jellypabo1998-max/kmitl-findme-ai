@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { Accounts, AuthError } from './auth-service.mjs';
 import { PostgresStore } from './auth-store.mjs';
+import { classifyImage, CLASSIFIER_MODEL, VisionError } from './ai-service.mjs';
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 5, connectionTimeoutMillis: 10000 });
 pool.on('error', () => console.error('Database pool connection error'));
@@ -31,10 +32,12 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
   } finally { if (userId) await pool.query('DELETE FROM findme_users WHERE id=$1',[userId]); }
 }
 const root = dirname(fileURLToPath(import.meta.url));
-const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js']);
+const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','image-search.html','image-search.js','image-search-worker.js','image-match-utils.js']);
 const origins = new Set((process.env.ALLOWED_ORIGINS || 'https://jellypabo1998-max.github.io').split(',').map(s=>s.trim()));
 const limits = new Map();
 let activeAuth = 0;
+let activeVision = 0;
+const visionLimits=new Map();
 const server = http.createServer(async (req,res) => {
   const origin = req.headers.origin;
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -51,6 +54,19 @@ const server = http.createServer(async (req,res) => {
   try {
     const path = new URL(req.url,'http://localhost').pathname;
     if (path==='/health' && req.method==='GET') { await pool.query('SELECT 1'); return reply(200,{ok:true}); }
+    if(path==='/api/vision/status'||path==='/api/vision/classify'){
+      await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
+      if(path.endsWith('/status')&&req.method==='GET')return reply(200,{ready:!!process.env.ROBOFLOW_API_KEY,model:CLASSIFIER_MODEL});
+      if(req.method!=='POST'||!path.endsWith('/classify'))return reply(404,{error:'Not found'});
+      const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress).split(',')[0],now=Date.now();
+      let rate=visionLimits.get(ip);if(!rate||rate.until<now){rate={count:0,until:now+60000};visionLimits.set(ip,rate);}
+      if(visionLimits.size>10000)for(const [k,v]of visionLimits)if(v.until<now)visionLimits.delete(k);
+      if(++rate.count>10||activeVision>=2)throw new VisionError(429,'มีคำขอวิเคราะห์มากเกินไป กรุณารอสักครู่');
+      if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new VisionError(400,'Invalid request');
+      let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>2850000)throw new VisionError(413,'รูปใหญ่เกินไป');chunks.push(chunk);}
+      let data;try{data=JSON.parse(Buffer.concat(chunks).toString());}catch{throw new VisionError(400,'Invalid request');}
+      activeVision++;try{return reply(200,await classifyImage(data?.image));}finally{activeVision--;}
+    }
     if (path.startsWith('/api/auth/')) {
       const token = (req.headers.authorization || '').replace(/^Bearer /,'');
       if (path==='/api/auth/me' && req.method==='GET') return reply(200,{user:await accounts.me(token)});

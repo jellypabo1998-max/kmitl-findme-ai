@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "engines": { "node": "22.x" },
-  "scripts": { "start": "node server.mjs", "test": "node --test auth.test.mjs" },
+  "scripts": { "start": "node server.mjs", "test": "node --test auth.test.mjs vision.test.mjs" },
   "dependencies": { "pg": "8.16.3" }
 }
