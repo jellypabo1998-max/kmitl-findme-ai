@@ -936,12 +936,201 @@ function setupVerify() {
     }
   );
 }
+
 /* =========================================
-   START APP
+   AUTH SYSTEM (PROTOTYPE)
+========================================= */
+function setupLogin() {
+  const form = document.getElementById('loginForm');
+  if (!form) return;
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const name = document.getElementById('loginUsername').value.trim();
+    const email = document.getElementById('loginEmail').value.trim();
+    const error = document.getElementById('loginError');
+    if (!name) {
+      error.textContent = 'กรุณากรอกชื่อผู้ใช้'; error.hidden = false; return;
+    }
+    try {
+      localStorage.setItem('kmitl_user', JSON.stringify({name, email}));
+      location.href = 'index.html';
+    } catch {
+      error.textContent = 'บันทึกไม่สำเร็จ กรุณาอนุญาตการเก็บข้อมูลในเบราว์เซอร์'; error.hidden = false;
+    }
+  });
+}
+function readUser() {
+  try {
+    const user = JSON.parse(localStorage.getItem('kmitl_user') || 'null');
+    return user && typeof user.name === 'string' && user.name.trim() && typeof user.email === 'string' ? user : null;
+  } catch { return null; }
+}
+function setupAuth() {
+  const user = readUser();
+  const userJSON = user ? JSON.stringify(user) : null;
+  const path = window.location.pathname;
+  const isLoginPage = path.includes('login.html');
+
+  // 1. ระบบบังคับล็อกอิน
+  if (!userJSON) {
+    if (!isLoginPage) {
+      window.location.href = 'login.html';
+      return false; 
+    }
+  } else {
+    if (isLoginPage) {
+      window.location.href = 'index.html';
+      return;
+    }
+  }
+
+  // 2. จัดการเมนู Dropdown
+  if (!isLoginPage) {
+    const navActionsList = document.querySelectorAll('.nav-actions');
+    navActionsList.forEach(nav => {
+      if (userJSON) {
+        const user = JSON.parse(userJSON);
+        
+        nav.innerHTML = `
+          <a class="btn btn-light" href="browse.html">Search Items</a>
+          <div style="position: relative; display: inline-block;">
+            <button class="btn btn-dark" id="userMenuBtn">👤 ${escapeHTML(user.name)} ▾</button>
+            <div class="user-dropdown" id="userDropdown">
+              <div class="user-info">
+                <b>${escapeHTML(user.name)}</b>
+                <small>${escapeHTML(user.email)}</small>
+              </div>
+              <a class="btn btn-light btn-block" href="my-reports.html" style="justify-content:center;">My Reports</a>
+              <button class="btn btn-light btn-block" id="logoutBtn" style="color: #c8432f; border-color: #f5c6cb; justify-content:center;">Log out</button>
+            </div>
+          </div>
+        `;
+
+        const menuBtn = nav.querySelector('#userMenuBtn');
+        const dropdown = nav.querySelector('#userDropdown');
+        const logoutBtn = nav.querySelector('#logoutBtn');
+
+        menuBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (dropdown && !dropdown.contains(e.target) && e.target !== menuBtn) {
+            dropdown.classList.remove('show');
+          }
+        });
+
+        logoutBtn?.addEventListener('click', () => {
+          localStorage.removeItem('kmitl_user');
+          window.location.href = 'login.html'; 
+        });
+      }
+    });
+  }
+  return true;
+}
+/* =========================================
+   MULTI-STEP REPORT FORM
+========================================= */
+function setupReportSteps() {
+  const form = document.querySelector('[data-report-form]');
+  const steps = form?.querySelectorAll('.form-step');
+  if (!steps?.length) return;
+  form.noValidate = true;
+  const buttons = form.querySelectorAll('[data-step-button]');
+  let currentStep = 1;
+  const message = document.createElement('p');
+  message.setAttribute('role', 'alert');
+  message.className = 'step-error';
+  message.hidden = true;
+  form.querySelector('.progress').after(message);
+
+  function showStep(step) {
+    currentStep = step;
+    steps.forEach(section => section.classList.toggle('active', Number(section.dataset.step) === step));
+    buttons.forEach(button => {
+      const n = Number(button.dataset.stepButton);
+      button.classList.toggle('active', n === step);
+      button.classList.toggle('completed', n < step);
+      if (n === step) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
+    if (step === 4) updateReview();
+  }
+
+  function validateThrough(last) {
+    message.hidden = true;
+    for (const section of steps) {
+      const n = Number(section.dataset.step);
+      if (n > last) continue;
+      for (const input of section.querySelectorAll('input:not([type="file"]), textarea, select')) {
+        input.setCustomValidity(input.required && !input.value.trim() ? 'กรุณากรอกข้อมูลนี้' : '');
+        if (!input.checkValidity()) {
+          showStep(n);
+          input.reportValidity();
+          return false;
+        }
+      }
+      if (n === 2) {
+        const file = form.querySelector('[data-upload]')?.files?.[0];
+        if (file && (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2 * 1024 * 1024)) {
+          showStep(2);
+          message.textContent = 'กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB';
+          message.hidden = false;
+          return false;
+        }
+      }
+      if (n === 3 && !validCoordinates(form.elements.latitude.value, form.elements.longitude.value)) {
+        showStep(3);
+        message.textContent = 'กรุณาปักหมุดบนแผนที่ หรือกรอกพิกัดก่อนตรวจทานรายงาน';
+        message.hidden = false;
+        return false;
+      }
+    }
+    return true;
+  }
+  function moveTo(target) {
+    if (target < currentStep || validateThrough(target - 1)) showStep(target);
+  }
+  form.querySelectorAll('[data-next], [data-prev], [data-step-button]').forEach(button => {
+    button.addEventListener('click', () => moveTo(Number(button.dataset.next || button.dataset.prev || button.dataset.stepButton)));
+  });
+  form.addEventListener('input', event => {
+    if (typeof event.target.setCustomValidity === 'function') event.target.setCustomValidity('');
+  });
+  form.addEventListener('submit', event => {
+    const wasReview = currentStep === 4;
+    if (!validateThrough(3) || !wasReview) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (message.hidden && form.checkValidity() && validCoordinates(form.elements.latitude.value, form.elements.longitude.value)) showStep(4);
+    }
+  }, true);
+
+  function updateReview() {
+    const review = document.getElementById('reviewBox');
+    if (!review) return;
+    const value = name => form.elements[name]?.value || '-';
+    const photo = form.querySelector('.upload-preview img');
+    const image = photo && safePhoto(photo.src) ? `<img class="review-image" src="${escapeHTML(photo.src)}" alt="รูปสำหรับตรวจทานรายงาน">` : '<span class="meta">No photo selected</span>';
+    const rows = [['Item name','itemName'],['Category','category'],['Description','description'],['Date lost','date'],['Approx. time','time'],['Location','location']];
+    review.innerHTML = rows.map(([label,name]) => `<div class="review-row"><span class="review-label">${label}</span><span class="review-value">${escapeHTML(value(name))}</span></div>`).join('')
+      + `<div class="review-row"><span class="review-label">Coordinates</span><span class="review-value">${escapeHTML(value('latitude'))}, ${escapeHTML(value('longitude'))}</span></div>`
+      + `<div class="review-row"><span class="review-label">Photo</span><span class="review-value">${image}</span></div>`;
+  }
+  showStep(1);
+}
+/* =========================================
+   START APP lalana
 ========================================= */
 document.addEventListener(
   'DOMContentLoaded',
   () => {
+    setupLogin();
+    if (!setupAuth()) return;
+    setupReportSteps(); 
     renderItems(
       'recentGrid',
       allBrowseItems().slice(0,6)

@@ -81,3 +81,89 @@ img{max-width:100%;display:block}
 .empty-state{padding:36px;border:1px dashed #d9dace;border-radius:20px;color:#777}.filter-bar{flex-wrap:wrap}.filter-bar select{max-width:100%}
 @media(max-width:760px){.overview-map{height:340px}.picker-map{height:330px}.map-panel{padding:16px}.map-panel-head{display:block}.map-legend{margin-top:16px}.map-panel-head h2{font-size:28px}.map-picker-card{position:static}}
 
+/* =========================================
+   USER DROPDOWN MENU /lalana
+========================================= */
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 240px;
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100;
+}
+.user-dropdown.show {
+  display: flex;
+}
+.user-info {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+}
+.user-info b {
+  display: block;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+}
+.user-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+  word-break: break-all;
+}
+/* =========================================
+   DARK MODE (NIGHT THEME)
+========================================= */
+body.dark-mode {
+  --ink: #f5f5f1;
+  --paper: #121212;
+  --card: #1e1e1e;
+  --muted: #a0a0a0;
+  --line: #333333;
+  --shadow: 0 16px 50px rgba(0,0,0,0.4);
+}
+
+body.dark-mode .site-header {
+  background: rgba(18, 18, 18, 0.93);
+}
+
+body.dark-mode input, 
+body.dark-mode textarea, 
+body.dark-mode select {
+  background: #1a1a1a;
+  color: #f5f5f1;
+  border-color: #444;
+}
+
+body.dark-mode .btn-light {
+  background: #2a2a2a;
+  color: #f5f5f1;
+  border-color: #444;
+}
+
+body.dark-mode .btn-dark {
+  background: #f5f5f1;
+  color: #111;
+}
+
+body.dark-mode .upload-box, 
+body.dark-mode .map-panel {
+  background: #1a1a1a;
+  border-color: #444;
+}
+
+body.dark-mode .item-photo, 
+body.dark-mode .match-photo {
+  background: #2a2a2a;
+}
+.step-error,.login-error{color:var(--red);line-height:1.5}.login-error{text-align:center}.review-value{overflow-wrap:anywhere}
+@media(max-width:900px){.nav{flex-wrap:wrap;padding:12px 0;gap:12px}.nav-links{display:flex;order:3;width:100%;overflow:auto;white-space:nowrap}.nav-actions{margin-left:auto}.nav-links a{flex-shrink:0}}

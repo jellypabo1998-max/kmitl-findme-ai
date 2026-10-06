@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Log in — FindMe AI</title>
+<link rel="stylesheet" href="style.css?v=20261006-lalana">
+<style>
+  /* จัดให้อยู่กึ่งกลางหน้าจอเต็ม 100% */
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    background: #f5f5f1; 
+  }
+  .login-container {
+    width: 100%;
+    max-width: 440px; /* ขนาดกล่องกำลังดี */
+    padding: 24px;
+  }
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    text-decoration: none;
+    color: #111;
+  }
+  .brand-logo .brand-mark {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: #111;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 24px;
+  }
+  .brand-logo b { font-family: Manrope, sans-serif; font-size: 26px; }
+  .brand-logo small { display: block; color: #777; font-size: 11px; letter-spacing: .14em; text-align: left;}
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <a class="brand-logo" href="index.html">
+    <div class="brand-mark">F</div>
+    <div>
+      <b>FindMe AI</b>
+      <small>KMITL</small>
+    </div>
+  </a>
+
+  <div class="page-title" style="text-align: center; margin-bottom: 28px;">
+    <h1 style="font-size: 42px; margin-top: 10px;">Welcome back</h1>
+    <p>เข้าสู่ระบบแบบทดลองเพื่อใช้งาน FindMe AI<br><small>ใช้ข้อมูลทดสอบ ระบบยังไม่ตรวจสอบรหัสผ่านจริง</small></p>
+  </div>
+
+  <form id="loginForm" class="form-card">
+    <div class="form-grid" style="grid-template-columns: 1fr;">
+      <div class="field">
+        <label for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" required placeholder="e.g. lalana_k">
+      </div>
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required placeholder="e.g. 66xxxxxx@kmitl.ac.th">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password (ทดลอง)</label>
+        <input type="password" id="loginPassword" autocomplete="off" required placeholder="••••••••">
+      </div>
+    </div>
+    
+    <div class="form-actions" style="margin-top: 24px;">
+      <button class="btn btn-dark btn-block" type="submit" style="width: 100%; padding: 14px;">Log in</button>
+    </div>
+  </form>
+</div>
+
+<p id="loginError" role="alert" class="login-error" hidden></p>
+<script src="app.js?v=20261006-lalana"></script>
+</body>
+</html>
