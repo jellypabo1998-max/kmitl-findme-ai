@@ -5,6 +5,13 @@ window.FindMeAuthReady = (async () => {
   if (document.readyState === 'loading') await new Promise(resolve => document.addEventListener('DOMContentLoaded',resolve,{once:true}));
   const key='findme_session_v1';
   const isEntry=/\/(login|register)\.html$/.test(location.pathname);
+  const isHome=/\/(index\.html)?$/.test(location.pathname);
+  let internalEntry=false;
+  try {internalEntry=!!document.referrer&&new URL(document.referrer).origin===location.origin;} catch {}
+  const navigation=typeof performance!=='undefined'?performance.getEntriesByType('navigation')[0]?.type:'navigate';
+  // Bookmarks and outside links start on Home; links inside the app, reloads,
+  // and Back/Forward keep the page the member intentionally selected.
+  const startAtHome=!isHome&&!internalEntry&&(!navigation||navigation==='navigate');
   const config=window.FINDME_AUTH_API || '';
   const api=config.replace(/\/$/,'');
   let session=null;
@@ -53,7 +60,7 @@ window.FindMeAuthReady = (async () => {
     const waiting=document.createElement('div');waiting.className='auth-wait';waiting.setAttribute('role','status');waiting.textContent='กำลังตรวจสอบบัญชี…';document.body.append(waiting);
     try {
       const result=await request('me');window.FindMeUser=result.user;
-      if(isEntry){location.replace('index.html');return null;}
+      if(isEntry||startAtHome){location.replace('index.html');return null;}
       const name=document.getElementById('accountName'),email=document.getElementById('accountEmail');
       if(name)name.textContent=result.user.name;if(email)email.textContent=result.user.email;
       document.getElementById('accountLogout')?.addEventListener('click',async()=>{try{await logout();}catch(e){showError(e.message);}});
