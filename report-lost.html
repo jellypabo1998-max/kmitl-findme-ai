@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Report a lost item — FindMe AI</title>
-<link rel="stylesheet" href="style.css?v=20261006-accounts">
+<link rel="stylesheet" href="style.css?v=20261006-layout2">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
 /* ===== STEP NAV (จากโค้ดของเพื่อน) ===== */
@@ -101,7 +101,7 @@
   }
 }
 </style>
-<script src="auth-config.js?v=20261006-accounts"></script><script src="auth.js?v=20261006-accounts"></script></head>
+<script src="auth-config.js?v=20261006-layout2"></script><script src="auth.js?v=20261006-layout2"></script></head>
 <body>
 
 <header class="site-header">
@@ -251,6 +251,7 @@
           <button type="button" class="btn btn-light" id="useMyLocation">⌖ ใช้ตำแหน่งของฉัน</button>
           <button type="button" class="btn btn-light" id="resetCampus">กลับ KMITL</button>
         </div>
+        <a id="pinGoogleLink" class="map-external" target="_blank" rel="noopener noreferrer" hidden>เปิดจุดนี้ใน Google Maps ↗</a>
         <p id="pinStatus" class="map-status" role="status" aria-live="polite">ยังไม่เลือกตำแหน่ง</p>
         <details class="coordinate-details">
           <summary>กรอกพิกัดเอง</summary>
@@ -275,8 +276,8 @@
   </div>
 </footer>
 
-<script src="app.js?v=20261006-accounts"></script>
+<script src="app.js?v=20261006-layout2"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="map.js"></script>
+<script src="map.js?v=20261006-layout2"></script>
 </body>
 </html>

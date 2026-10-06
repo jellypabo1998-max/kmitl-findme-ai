@@ -25,6 +25,12 @@ function setupLocationPicker() {
   const link = document.getElementById('pinGoogleLink');
   const map = createCampusMap('reportMap');
   let marker, accuracyCircle, locationRequest = 0;
+  if (map) {
+    const resizeMap = () => map.invalidateSize({pan: false});
+    if (window.ResizeObserver) new ResizeObserver(resizeMap).observe(container);
+    window.addEventListener('resize', resizeMap);
+    window.FindMeAuthReady?.then(resizeMap);
+  }
   if (!map) {
     container.textContent = 'โหลดแผนที่ไม่ได้ เปิด “กรอกพิกัดเอง” เพื่อเลือกตำแหน่ง หรือรีเฟรชเมื่อมีอินเทอร์เน็ต';
     container.classList.add('map-unavailable');
@@ -36,7 +42,7 @@ function setupLocationPicker() {
     manualLat.value = latField.value;
     manualLng.value = lngField.value;
     status.textContent = `ปักหมุดแล้ว: ${latField.value}, ${lngField.value}` + (accuracy ? ` · GPS คลาดเคลื่อนประมาณ ${Math.round(accuracy)} ม.` : ' · ลากหมุดเพื่อแก้ตำแหน่ง');
-    link.href = googleMapsLink(point); link.hidden = false;
+    if (link) { link.href = googleMapsLink(point); link.hidden = false; }
     const locationInput = form.elements.namedItem('location');
     if (!locationInput.value.trim() || locationInput.dataset.pinGenerated === locationInput.value) {
       locationInput.value = `Pinned location (${latField.value}, ${lngField.value})`;
@@ -70,7 +76,7 @@ function setupLocationPicker() {
     }, error => {
       if (request !== locationRequest) return;
       status.textContent = error.code === 1 ? 'ไม่ได้รับอนุญาตใช้ตำแหน่ง — แตะบนแผนที่หรือกรอกพิกัดเองได้' : 'หาตำแหน่งไม่สำเร็จ — แตะบนแผนที่หรือกรอกพิกัดเองได้';
-    }, {enableHighAccuracy: true, timeout: 12000, maximumAge: 30000});
+    }, {enableHighAccuracy: true, timeout: 12000, maximumAge: 0});
   });
 }
 
