@@ -69,9 +69,35 @@ function card(item) {
     <div class="meta">${escapeHTML(item.time)}</div>
     <div class="meta">${item.isDemo ? 'ข้อมูลตัวอย่าง' : 'รายงานที่บันทึก'}</div>
     ${point ? `<a class="text-link" href="${googleMapsLink(point)}" target="_blank" rel="noopener noreferrer">📍 ดูตำแหน่งจริง ↗</a><br>` : '<div class="meta">ยังไม่มีพิกัด</div>'}
-    <a class="text-link" href="${item.id ? reportLink(item) : item.type === 'Found' ? 'verify.html' : 'matches.html'}">View details →</a>
+    <a class="text-link" ${item.id ? `data-item-details="${escapeHTML(item.id)}"` : ''} href="${item.id ? reportLink(item) : item.type === 'Found' ? 'verify.html' : 'matches.html'}">View details →</a>
   </article>`;
 }
+
+// Shared item details for cards and map markers.
+window.FindMeOpenItem = function(item) {
+  let dialog = document.getElementById('itemDetailsDialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog'); dialog.id='itemDetailsDialog'; dialog.className='item-details-dialog';
+    dialog.setAttribute('aria-labelledby','itemDetailsTitle'); document.body.append(dialog);
+    dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();}});
+  }
+  const photo=safePhoto(item.photo), point=validCoordinates(item.latitude,item.longitude);
+  dialog.innerHTML=`<div class="item-details-head"><span class="badge ${item.type==='Found'?'found':'lost'}">${item.type==='Found'?'Found':'Lost'}</span><button class="btn btn-light" type="button" data-close-item aria-label="ปิดรายละเอียด">✕</button></div>
+    ${photo?`<img class="item-details-image" src="${escapeHTML(photo)}" alt="${escapeHTML(item.name||item.itemName||'รูปสิ่งของ')}">`:`<div class="item-details-placeholder">${getIcon(item.category)}</div>`}
+    <h2 id="itemDetailsTitle">${escapeHTML(item.name||item.itemName||'Untitled item')}</h2>
+    <p class="meta">${escapeHTML(item.category||'Other')} • ${escapeHTML(item.location||'ไม่ระบุสถานที่')}</p>
+    <p class="meta">${escapeHTML(item.time||[item.date,item.time].filter(Boolean).join(' ')||'')}</p>
+    <p class="item-details-description">${escapeHTML(item.description||'ไม่มีรายละเอียดเพิ่มเติม')}</p>
+    <div class="form-actions">${point?`<a class="btn btn-light" href="${googleMapsLink(point)}" target="_blank" rel="noopener noreferrer">เปิดตำแหน่งใน Google Maps ↗</a>`:''}${item.id?`<a class="btn btn-dark" href="${reportLink(item)}">ดูรายการที่ตรงกัน</a>`:''}</div>`;
+  dialog.querySelector('[data-close-item]').addEventListener('click',()=>dialog.close());
+  if(!dialog.open)dialog.showModal();
+};
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-item-details]');if(!button)return;
+  const item=allBrowseItems().find(row=>String(row.id)===button.dataset.itemDetails);
+  if(item){event.preventDefault();window.FindMeOpenItem(item);}
+});
+
 function validCoordinates(latitude, longitude) {
   if (latitude === '' || longitude === '' || latitude == null || longitude == null) return null;
   const lat = Number(latitude), lng = Number(longitude);

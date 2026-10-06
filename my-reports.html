@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Reports — FindMe AI</title>
-<link rel="stylesheet" href="style.css?v=20261006-layout2">
+<link rel="stylesheet" href="style.css?v=20261006-details3">
 <style>
 /* ===== ส่วนเสริมเฉพาะหน้านี้ (ใช้ตัวแปรสี/ฟอนต์จาก style.css) ===== */
 .mr-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
@@ -14,8 +14,8 @@
 .mr-tab span{opacity:.6;margin-left:6px}
 .mr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .mr-card{padding:14px;display:flex;flex-direction:column}
-.mr-photo{position:relative;min-width:0;min-height:0;height:185px;border-radius:15px;background:linear-gradient(145deg,#efefea,#deded8);display:grid;place-items:center;font-size:48px;overflow:hidden}
-.mr-photo img{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;max-height:100%;object-fit:contain;object-position:center}
+.mr-photo{position:relative;flex:none;min-width:0;min-height:185px;height:185px;border-radius:15px;background:linear-gradient(145deg,#efefea,#deded8);display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}
+.mr-photo img{display:block;position:static;flex:none;width:100%;height:185px;max-height:185px;object-fit:contain;object-position:center}
 .mr-body{display:flex;flex-direction:column;gap:2px;flex:1;padding-top:13px}
 .mr-body h3{font-family:Manrope,"Noto Sans Thai",sans-serif;margin:8px 0 2px;font-size:18px}
 .mr-desc{font-size:14px;color:#444;margin:8px 0 0;line-height:1.55}
@@ -28,7 +28,7 @@
 .badge.locked{background:#fde8e4;color:var(--red)}
 .mr-verify{max-width:760px}
 .mr-summary{display:flex;gap:18px;align-items:center;padding-bottom:20px;margin-bottom:22px;border-bottom:1px solid var(--line)}
-.mr-summary .mr-photo{width:110px;height:110px;flex:none;font-size:40px}
+.mr-summary .mr-photo{width:110px;height:110px;min-height:110px;flex:none;font-size:40px}.mr-summary .mr-photo img{height:110px;max-height:110px}
 .mr-summary h2{font-family:Manrope,"Noto Sans Thai",sans-serif;margin:8px 0 4px}
 .hint{font-size:12px;color:#777;margin:0}
 .box{padding:16px 18px;border-radius:16px;margin-bottom:18px;line-height:1.65}
@@ -57,7 +57,7 @@ html{overflow-y:scroll}
 @media(max-width:600px){.mr-grid{grid-template-columns:1fr}.mr-summary{flex-direction:column;align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){.mr-toast{transition:none}}
 </style>
-<script src="auth-config.js?v=20261006-layout2"></script><script src="auth.js?v=20261006-layout2"></script></head>
+<script src="auth-config.js?v=20261006-details3"></script><script src="auth.js?v=20261006-details3"></script></head>
 <body>
 
 <header class="site-header">
@@ -96,7 +96,7 @@ html{overflow-y:scroll}
 </div>
 <div class="mr-toast" id="toast" role="status"></div>
 
-<script src="app.js?v=20261006-layout2"></script>
+<script src="app.js?v=20261006-details3"></script>
 
 <script>
 (() => {
@@ -192,7 +192,7 @@ html{overflow-y:scroll}
   const fmtDT = ts => new Date(ts).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
   const statusOf = r => r.status || 'Searching';
   const badge = r => { const [c, t] = STATUS[statusOf(r)] || ['lost', escapeHTML(statusOf(r))]; return `<span class="badge ${c}">${t}</span>`; };
-  const photoBox = (r, cls = 'mr-photo') => { const p = safePhoto(r.photo); return `<div class="${cls}">${p ? `<img src="${escapeHTML(p)}" alt="${escapeHTML(r.itemName)}">` : getIcon(r.category)}</div>`; };
+  const photoBox = (r, cls = 'mr-photo') => { const p = safePhoto(r.photo); return `<div class="${cls}">${p ? `<img src="${escapeHTML(p)}" height="185" alt="${escapeHTML(r.itemName || 'รูปสิ่งของ')}">` : getIcon(r.category)}</div>`; };
 
   let tT;
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tT); tT = setTimeout(() => t.classList.remove('show'), 2400); }

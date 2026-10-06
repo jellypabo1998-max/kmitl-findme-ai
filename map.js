@@ -91,7 +91,13 @@ function updateOverviewMap(id, items) {
     const title = document.createElement('strong'); title.textContent = item.name || 'Untitled item';
     const details = document.createElement('p'); details.textContent = `${item.type} · ${item.location || ''}`;
     const link = document.createElement('a'); link.href = googleMapsLink(point); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = 'เปิด Google Maps ↗';
-    popup.append(title, details, link);
+    const open = document.createElement('button');
+    open.type = 'button'; open.className = 'btn btn-dark map-item-open'; open.textContent = 'ดูรายละเอียดสิ่งของ';
+    open.addEventListener('click', () => window.FindMeOpenItem?.(item));
+    title.className = 'map-item-title'; title.tabIndex = 0; title.setAttribute('role','button');
+    title.addEventListener('click', () => window.FindMeOpenItem?.(item));
+    title.addEventListener('keydown', event => { if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.FindMeOpenItem?.(item); } });
+    popup.append(title, details, open, document.createElement('br'), link);
     L.circleMarker(point, {
       radius: 9, color: '#fff', weight: 2,
       fillColor: item.type === 'Found' ? '#f05a24' : '#2563eb', fillOpacity: 1
