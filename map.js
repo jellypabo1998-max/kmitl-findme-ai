@@ -87,21 +87,30 @@ function updateOverviewMap(id, items) {
   state.markers.clearLayers();
   const pinned = items.map(item => ({item, point: validCoordinates(item.latitude, item.longitude)})).filter(row => row.point);
   pinned.forEach(({item, point}) => {
-    const popup = document.createElement('div');
-    const title = document.createElement('strong'); title.textContent = item.name || 'Untitled item';
-    const details = document.createElement('p'); details.textContent = `${item.type} · ${item.location || ''}`;
-    const link = document.createElement('a'); link.href = googleMapsLink(point); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = 'เปิด Google Maps ↗';
-    const open = document.createElement('button');
-    open.type = 'button'; open.className = 'btn btn-dark map-item-open'; open.textContent = 'ดูรายละเอียดสิ่งของ';
-    open.addEventListener('click', () => window.FindMeOpenItem?.(item));
-    title.className = 'map-item-title'; title.tabIndex = 0; title.setAttribute('role','button');
-    title.addEventListener('click', () => window.FindMeOpenItem?.(item));
-    title.addEventListener('keydown', event => { if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.FindMeOpenItem?.(item); } });
-    popup.append(title, details, open, document.createElement('br'), link);
-    L.circleMarker(point, {
-      radius: 9, color: '#fff', weight: 2,
-      fillColor: item.type === 'Found' ? '#f05a24' : '#2563eb', fillOpacity: 1
-    }).bindPopup(popup).addTo(state.markers);
+    const popup = document.createElement('div'); popup.className = 'map-report-popup';
+    const title = document.createElement('button'); title.type='button'; title.className='map-report-title'; title.textContent=item.name || item.itemName || 'Untitled item'; title.setAttribute('aria-expanded','false');
+    const details = document.createElement('p'); details.className='map-report-meta'; details.textContent=`${item.type} · ${item.location || ''}`;
+    const hint=document.createElement('small'); hint.textContent='แตะชื่อสิ่งของเพื่อดูรูปและรายละเอียด'; hint.className='map-report-hint';
+    const expanded=document.createElement('div'); expanded.className='map-report-expanded'; expanded.hidden=true;
+    const photo = typeof safePhoto === 'function' ? safePhoto(item.photo) : '';
+    let marker;
+    if(photo) {
+      const image=document.createElement('img'); image.className='map-report-image'; image.alt=item.name || item.itemName || 'รูปสิ่งของ';
+      image.addEventListener('load',()=>{ if(!expanded.hidden)marker?.getPopup().update(); });
+      image.src=photo; expanded.append(image);
+    } else {
+      const placeholder=document.createElement('div'); placeholder.className='map-report-image map-report-no-photo'; placeholder.textContent=typeof getIcon==='function'?getIcon(item.category):'📦'; expanded.append(placeholder);
+    }
+    const category=document.createElement('p'); category.className='map-report-meta'; category.textContent=item.category || 'Other';
+    const description=document.createElement('p'); description.className='map-report-description'; description.textContent=item.description || 'ไม่มีรายละเอียดเพิ่มเติม';
+    const date=document.createElement('p'); date.className='map-report-meta'; date.textContent=item.time || [item.date,item.time].filter(Boolean).join(' ');
+    const collapse=document.createElement('button'); collapse.type='button'; collapse.className='map-report-collapse'; collapse.textContent='ย่อรายละเอียด';
+    const toggle=()=>{expanded.hidden=!expanded.hidden;title.setAttribute('aria-expanded',String(!expanded.hidden));hint.hidden=!expanded.hidden;marker?.getPopup().update();};
+    title.addEventListener('click',toggle);collapse.addEventListener('click',toggle);
+    expanded.append(category,description,date,collapse);
+    const link=document.createElement('a');link.className='map-report-external';link.href=googleMapsLink(point);link.target='_blank';link.rel='noopener noreferrer';link.textContent='เปิด Google Maps ↗';
+    popup.append(title,details,hint,expanded,link);
+    marker=L.circleMarker(point, {radius:9,color:'#fff',weight:2,fillColor:item.type==='Found'?'#f05a24':'#2563eb',fillOpacity:1}).bindPopup(popup,{minWidth:220,maxWidth:300,maxHeight:360}).addTo(state.markers);
   });
   if (pinned.length) state.map.fitBounds(state.markers.getBounds().pad(0.25), {maxZoom: 17});
   else state.map.setView(CAMPUS_CENTER, 16);
