@@ -4,10 +4,10 @@ if(window.FindMeUser){
  let photo=null,worker=null,busy=false,generation=0,rejectCompare=null;
  function token(){try{return JSON.parse(localStorage.getItem('findme_session_v1')||sessionStorage.getItem('findme_session_v1')||'null')?.token;}catch{return null;}}
  async function api(path,data){
-   const response=await fetch(`${window.FINDME_AUTH_API}/api/vision/${path}`,{method:data?'POST':'GET',headers:{Authorization:`Bearer ${token()}`,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(90000)});
+   const response=await fetch(`${window.FINDME_AUTH_API}/api/vision/${path}`,{method:data?'POST':'GET',headers:{Authorization:`Bearer ${token()}`,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(150000)});
    const payload=await response.json();if(!response.ok)throw new Error(payload.error||'เชื่อมต่อโมเดลไม่ได้');return payload;
  }
- try{const info=await api('status');choice.disabled=!info.ready;document.getElementById('classifierStatus').textContent=info.ready?'โมเดลเพื่อนพร้อมใช้งาน: AI Lost & Found เวอร์ชัน 1':'โมเดลเพื่อนยังรอการตั้งค่า API key — ยังใช้ AI ค้นหารูปคล้ายในเครื่องได้';}catch{choice.disabled=true;document.getElementById('classifierStatus').textContent='ยังตรวจการเชื่อมต่อโมเดลเพื่อนไม่ได้ — ใช้ AI ค้นหารูปคล้ายในเครื่องได้';}
+ try{const info=await api('status');choice.disabled=!info.ready;document.getElementById('classifierStatus').textContent=info.ready?'โมเดลเพื่อนเชื่อมกับตัวรัน AI ของเรา: AI Lost & Found เวอร์ชัน 1':'โมเดลเพื่อนยังรอเชื่อมตัวรัน AI ของเรา — ยังใช้ AI ค้นหารูปคล้ายในเครื่องได้';}catch{choice.disabled=true;document.getElementById('classifierStatus').textContent='ยังตรวจการเชื่อมต่อโมเดลเพื่อนไม่ได้ — ใช้ AI ค้นหารูปคล้ายในเครื่องได้';}
  async function prepare(file){
    if(file.size>20*1024*1024)throw new Error('กรุณาเลือกรูปไม่เกิน 20 MB');
    const url=URL.createObjectURL(file);

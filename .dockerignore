@@ -1,0 +1,7 @@
+.git
+.env
+.env.*
+!selfhost.env.example
+node_modules
+*.log
+*.zip

@@ -6,7 +6,7 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { Accounts, AuthError } from './auth-service.mjs';
 import { PostgresStore } from './auth-store.mjs';
-import { classifyImage, CLASSIFIER_MODEL, VisionError } from './ai-service.mjs';
+import { classifyImage, CLASSIFIER_MODEL, VisionError, classifierConfigured } from './ai-service.mjs';
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 5, connectionTimeoutMillis: 10000 });
 pool.on('error', () => console.error('Database pool connection error'));
@@ -53,10 +53,11 @@ const server = http.createServer(async (req,res) => {
   const reply = (status,value) => { res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'}); res.end(JSON.stringify(value)); };
   try {
     const path = new URL(req.url,'http://localhost').pathname;
+    if(path==='/auth-config.js'&&req.method==='GET'&&process.env.SELF_HOSTED_AUTH==='true'){res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8'});return res.end('window.FINDME_AUTH_API = window.location.origin;');}
     if (path==='/health' && req.method==='GET') { await pool.query('SELECT 1'); return reply(200,{ok:true}); }
     if(path==='/api/vision/status'||path==='/api/vision/classify'){
       await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
-      if(path.endsWith('/status')&&req.method==='GET')return reply(200,{ready:!!process.env.ROBOFLOW_API_KEY,model:CLASSIFIER_MODEL});
+      if(path.endsWith('/status')&&req.method==='GET')return reply(200,{ready:classifierConfigured(),model:CLASSIFIER_MODEL,mode:'self-hosted'});
       if(req.method!=='POST'||!path.endsWith('/classify'))return reply(404,{error:'Not found'});
       const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress).split(',')[0],now=Date.now();
       let rate=visionLimits.get(ip);if(!rate||rate.until<now){rate={count:0,until:now+60000};visionLimits.set(ip,rate);}
