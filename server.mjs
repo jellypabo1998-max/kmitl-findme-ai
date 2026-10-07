@@ -30,7 +30,8 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
     if(!(await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id&&!r.contactValue&&r.isOwner===false))throw new Error('Shared report visibility test failed');
     try{await reports.contact({id:'00000000-0000-0000-0000-000000000000',name:'other'},testReport.id,{contactMethod:'email',contactValue:'test@example.invalid',contactConsent:true});throw new Error('Report ownership failed');}catch(e){if(e.status!==404)throw e;}
     const requester=await accounts.register({username:`claim_${tag}`,email:`claim_${tag}@example.invalid`,password});requesterId=requester.user.id;
-    await reports.claim(requester.user,testReport.id,{evidence:'Synthetic private identifying mark'});
+    const lostReport=await reports.create(requester.user,{itemName:'Database smoke lost',description:'Synthetic blue tag',location:'KMITL',category:'Keys',kind:'lost',date:'2026-10-07',latitude:13.727478,longitude:100.775952,contactMethod:'inapp'});
+    await reports.claim(requester.user,testReport.id,{answers:{detail:'Synthetic blue tag',date:'2026-10-07',location:'KMITL',confirm:true},linkedReportId:lostReport.id});
     const claim=(await reports.claims(registered.user)).find(c=>c.report_id===testReport.id);if(!claim)throw new Error('Claim persistence failed');
     try{await reports.review(requester.user,claim.id,{status:'Approved'});throw new Error('Self approval accepted');}catch(e){if(e.status!==404)throw e;}
     await reports.review(registered.user,claim.id,{status:'Approved'});
@@ -38,7 +39,21 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
     await reports.review(registered.user,claim.id,{status:'Rejected'});
     if((await reports.list(requester.user)).some(r=>r.id===testReport.id&&r.contactValue))throw new Error('Revoked contact remained visible');
     console.log('Private claim smoke test passed: hidden contacts, owner approval, requester unlock, revocation');
-    await reports.status(registered.user,testReport.id,'Returned');
+    await reports.review(registered.user,claim.id,{status:'Approved'});
+    const outsider={id:'00000000-0000-0000-0000-000000000000'};
+    for(const operation of [()=>reports.conversation(outsider,claim.id),()=>reports.message(outsider,claim.id,{text:'Unauthorized'}),()=>reports.caseAction(outsider,claim.id,{action:'confirm'})]){try{await operation();throw new Error('Outsider accessed case');}catch(e){if(e.status!==404)throw e;}}
+    await reports.message(requester.user,claim.id,{text:'Synthetic handover chat'});
+    if(!(await reports.conversation(registered.user,claim.id)).messages.some(m=>m.body==='Synthetic handover chat'))throw new Error('Message persistence failed');
+    try{await reports.caseAction(requester.user,claim.id,{action:'confirm'});throw new Error('Premature closure accepted');}catch(e){if(e.status!==409)throw e;}
+    const proof='data:image/jpeg;base64,/9j/';
+    try{await reports.caseAction(requester.user,claim.id,{action:'handover',photo:proof});throw new Error('Wrong handover role accepted');}catch(e){if(e.status!==403)throw e;}
+    await reports.caseAction(registered.user,claim.id,{action:'handover',photo:proof});
+    try{await reports.caseAction(registered.user,claim.id,{action:'confirm'});throw new Error('Finder confirmed own handover');}catch(e){if(e.status!==403)throw e;}
+    await reports.caseAction(requester.user,claim.id,{action:'confirm'});
+    if((await reports.conversation(requester.user,claim.id)).case.caseStatus!=='Closed')throw new Error('Case closure failed');
+    if(!(await reports.list(requester.user,true)).some(r=>r.id===lostReport.id&&r.status==='Returned'))throw new Error('Linked lost report not closed');
+    try{await reports.message(requester.user,claim.id,{text:'After closure'});throw new Error('Closed case accepted message');}catch(e){if(e.status!==409)throw e;}
+    console.log('Case database smoke test passed: three questions, participant-only chat, handover photo, recipient confirmation, linked reports closed');
     if((await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id))throw new Error('Returned report remained public');
     console.log('Report database smoke test passed: persistent report, owner-only edits, return status');
     try { await accounts.login({identifier:registered.user.email,password:'intentionally incorrect'}); throw new Error('Incorrect password accepted'); }
@@ -51,7 +66,7 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
   } finally { if(requesterId)await pool.query('DELETE FROM findme_users WHERE id=$1',[requesterId]);if (userId) await pool.query('DELETE FROM findme_users WHERE id=$1',[userId]); }
 }
 const root = dirname(fileURLToPath(import.meta.url));
-const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','found-ai.js','ai-test.html','ai-test.js','ai-evaluation.js','reports-client.js']);
+const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','found-ai.js','ai-test.html','ai-test.js','ai-evaluation.js','reports-client.js','cases-client.js']);
 const origins = new Set((process.env.ALLOWED_ORIGINS || 'https://jellypabo1998-max.github.io').split(',').map(s=>s.trim()));
 const limits = new Map();
 let activeAuth = 0;
@@ -79,6 +94,7 @@ const server = http.createServer(async (req,res) => {
       const user=await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
       if(path==='/api/reports'&&req.method==='GET')return reply(200,{reports:await reports.list(user,new URL(req.url,'http://localhost').searchParams.get('mine')==='1')});
       if(path==='/api/reports/claims'&&req.method==='GET')return reply(200,{claims:await reports.claims(user)});
+      const conversation=path.match(/^\/api\/reports\/claims\/([0-9a-f-]{36})\/messages$/i);if(conversation&&req.method==='GET')return reply(200,await reports.conversation(user,conversation[1]));
       if(req.method!=='POST')return reply(404,{error:'Not found'});
       const now=Date.now();let rate=reportLimits.get(user.id);if(!rate||rate.until<now){rate={count:0,until:now+3600000};reportLimits.set(user.id,rate);}if(++rate.count>120)throw new AuthError(429,'มีคำขอแก้รายงานมากเกินไป กรุณาลองภายหลัง');
       if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new AuthError(400,'ข้อมูลไม่ถูกต้อง');
@@ -86,6 +102,8 @@ const server = http.createServer(async (req,res) => {
       let data;try{data=JSON.parse(Buffer.concat(chunks).toString());}catch{throw new AuthError(400,'ข้อมูลไม่ถูกต้อง');}
       if(!data||typeof data!=='object'||Array.isArray(data))throw new AuthError(400,'ข้อมูลไม่ถูกต้อง');
       if(path==='/api/reports')return reply(201,{report:await reports.create(user,data)});
+      if(conversation)return reply(201,await reports.message(user,conversation[1],data));
+      const action=path.match(/^\/api\/reports\/claims\/([0-9a-f-]{36})\/action$/i);if(action)return reply(200,await reports.caseAction(user,action[1],data));
       const review=path.match(/^\/api\/reports\/claims\/([0-9a-f-]{36})\/review$/i);if(review)return reply(200,await reports.review(user,review[1],data));
       const claim=path.match(/^\/api\/reports\/([0-9a-f-]{36})\/claim$/i);if(claim)return reply(201,await reports.claim(user,claim[1],data));
       const match=path.match(/^\/api\/reports\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(contact|status)$/i);

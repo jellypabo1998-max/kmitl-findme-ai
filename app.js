@@ -654,8 +654,9 @@ function setupReportSteps() {
     const value = name => form.elements[name]?.value || '-';
     const photo = form.querySelector('.upload-preview img');
     const image = photo && safePhoto(photo.src) ? `<img class="review-image" src="${escapeHTML(photo.src)}" alt="รูปสำหรับตรวจทานรายงาน">` : '<span class="meta">No photo selected</span>';
-    const rows = [['Item name','itemName'],['Category','category'],['Description','description'],[form.dataset.kind === 'found' ? 'Date found' : 'Date lost','date'],['Approx. time','time'],['Location','location'],['Contact method','contactMethod'],['Contact','contactValue']];
+    const rows = [['Item name','itemName'],['Category','category'],['Description','description'],[form.dataset.kind === 'found' ? 'Date found' : 'Date lost','date'],['Approx. time','time'],['Location','location']];
     review.innerHTML = rows.map(([label,name]) => `<div class="review-row"><span class="review-label">${label}</span><span class="review-value">${escapeHTML(value(name))}</span></div>`).join('')
+      + `<div class="review-row"><span class="review-label">การติดต่อ</span><span class="review-value">แชทในเว็บและยืนยันรับคืนในเคส</span></div>`
       + `<div class="review-row"><span class="review-label">Coordinates</span><span class="review-value">${escapeHTML(value('latitude'))}, ${escapeHTML(value('longitude'))}</span></div>`
       + `<div class="review-row"><span class="review-label">Photo</span><span class="review-value">${image}</span></div>`;
   }

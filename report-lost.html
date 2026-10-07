@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Report a lost item — FindMe AI</title>
-<link rel="stylesheet" href="style.css?v=20261007-reportsfix3">
+<link rel="stylesheet" href="style.css?v=20261008-cases1">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
 /* ===== STEP NAV (จากโค้ดของเพื่อน) ===== */
@@ -101,7 +101,7 @@
   }
 }
 </style>
-<script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261007-reportsfix3"></script></head>
+<script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261008-cases1"></script></head>
 <body>
 
 <header class="site-header">
@@ -215,10 +215,10 @@
             <label for="lost-location">Last seen location</label>
             <input id="lost-location" name="location" required placeholder="e.g. Faculty of Science, KMITL">
           </div>
-<div class="field full"><h3>ช่องทางติดต่อเพื่อนัดคืนของ</h3><p class="meta">ช่องทางนี้จะเห็นได้เฉพาะคุณและผู้ที่คุณตรวจหลักฐานแล้วอนุมัติ</p></div>
-<div class="field"><label for="contactMethod">ช่องทาง</label><select id="contactMethod" name="contactMethod" required><option value="line">LINE ID</option><option value="phone">เบอร์โทร</option><option value="email">อีเมล</option></select></div>
-<div class="field"><label for="contactValue">LINE ID / เบอร์โทร / อีเมล</label><input id="contactValue" name="contactValue" required maxlength="254" placeholder="กรอกข้อมูลตามช่องทางที่เลือก"></div>
-<div class="field full"><label><input type="checkbox" name="contactConsent" required> ยอมรับให้สมาชิกเห็นรูป รายละเอียด และหมุด และเปิดข้อมูลติดต่อเฉพาะผู้ที่ฉันอนุมัติ</label></div>
+<div class="field full"><h3>ติดต่อผ่านแชทในเว็บ</h3><p class="meta">ผู้ใช้ตอบคำถามยืนยัน แล้วคุย นัดรับ และส่งรูปคืนของในเคสนี้</p></div>
+<input type="hidden" id="contactMethod" name="contactMethod" value="inapp">
+<input type="hidden" id="contactValue" name="contactValue" value="">
+<div class="field full"><label><input type="checkbox" name="contactConsent" required> ยอมรับให้สมาชิกเห็นรูป รายละเอียด และหมุด และใช้แชทในเคสเพื่อติดต่อคืนของ</label></div>
         </div>
         <div class="step-actions">
           <button type="button" class="btn btn-light" data-prev="2">← Back</button>
@@ -280,8 +280,8 @@
   </div>
 </footer>
 
-<script src="reports-client.js?v=20261007-reportsfix3"></script><script src="app.js?v=20261007-reportsfix3"></script>
+<script src="reports-client.js?v=20261008-cases1"></script><script src="cases-client.js?v=20261008-cases1"></script><script src="app.js?v=20261008-cases1"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="map.js?v=20261007-reportsfix3"></script>
+<script src="map.js?v=20261008-cases1"></script>
 </body>
 </html>
