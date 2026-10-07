@@ -59,6 +59,13 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
     if((await reports.conversation(requester.user,claim.id)).case.caseStatus!=='Closed')throw new Error('Case closure failed');
     if(!(await reports.list(requester.user,true)).some(r=>r.id===lostReport.id&&r.status==='Returned'))throw new Error('Linked lost report not closed');
     try{await reports.message(requester.user,claim.id,{text:'After closure'});throw new Error('Closed case accepted message');}catch(e){if(e.status!==409)throw e;}
+    try{await reports.remove(outsider,testReport.id);throw new Error('Outsider deleted report');}catch(e){if(e.status!==404)throw e;}
+    await reports.remove(registered.user,testReport.id);
+    if((await reports.list(registered.user,true)).some(r=>r.id===testReport.id))throw new Error('Deleted report remained in My Reports');
+    if((await reports.conversation(requester.user,claim.id)).case.caseStatus!=='Closed')throw new Error('Deleting announcement lost chat');
+    await reports.remove(registered.user,testReport.id,true);
+    if(!(await reports.list(registered.user,true)).some(r=>r.id===testReport.id))throw new Error('Restore failed');
+    console.log('Announcement delete smoke test passed: owner-only removal, undo, chat retained');
     console.log('Case database smoke test passed: three questions, participant-only chat, handover photo, recipient confirmation, linked reports closed');
     if((await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id))throw new Error('Returned report remained public');
     console.log('Report database smoke test passed: persistent report, owner-only edits, return status');
@@ -112,8 +119,9 @@ const server = http.createServer(async (req,res) => {
       const action=path.match(/^\/api\/reports\/claims\/([0-9a-f-]{36})\/action$/i);if(action)return reply(200,await reports.caseAction(user,action[1],data));
       const review=path.match(/^\/api\/reports\/claims\/([0-9a-f-]{36})\/review$/i);if(review)return reply(200,await reports.review(user,review[1],data));
       const claim=path.match(/^\/api\/reports\/([0-9a-f-]{36})\/claim$/i);if(claim)return reply(201,await reports.claim(user,claim[1],data));
-      const match=path.match(/^\/api\/reports\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(contact|status)$/i);
+      const match=path.match(/^\/api\/reports\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(contact|status|delete|restore)$/i);
       if(!match)return reply(404,{error:'Not found'});
+      if(['delete','restore'].includes(match[2]))return reply(200,await reports.remove(user,match[1],match[2]==='restore'));
       return reply(200,{report:await(match[2]==='contact'?reports.contact(user,match[1],data):reports.status(user,match[1],data.status))});
     }
     if(path==='/api/vision/classify' && req.method==='POST') {

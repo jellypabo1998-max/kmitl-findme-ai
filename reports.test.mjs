@@ -68,3 +68,5 @@ test('handover and closure are role checked and rolled back on premature or unau
  assert.equal(queries.at(-1)[0],'COMMIT');assert.equal(released,5);
  await assert.rejects(()=>store.status({id:'finder'},'r','Returned'),e=>e.status===409);
 });
+
+test('announcement deletion and undo bind authenticated ownership and hide removed listings',async()=>{let query,args;const store=new Reports({query:async(q,a)=>{query=q;args=a;return {rows:[{id:'r'}]};}});await store.remove({id:'owner'},'r');assert(query.includes('owner_id=$2'));assert(query.includes('deleted_at=now()'));assert.deepEqual(args,['r','owner']);await store.remove({id:'owner'},'r',true);assert(query.includes('deleted_at=NULL'));await store.list({id:'owner'},true);assert(query.includes('r.deleted_at IS NULL'));const denied=new Reports({query:async()=>({rows:[]})});await assert.rejects(()=>denied.remove({id:'outsider'},'r'),e=>e.status===404);await assert.rejects(()=>denied.remove({id:'outsider'},'r',true),e=>e.status===404);});

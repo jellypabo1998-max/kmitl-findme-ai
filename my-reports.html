@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Reports — FindMe AI</title>
-<link rel="stylesheet" href="style.css?v=20261008-cases1">
+<link rel="stylesheet" href="style.css?v=20261008-unified2">
 <style>
 /* ===== ส่วนเสริมเฉพาะหน้านี้ (ใช้ตัวแปรสี/ฟอนต์จาก style.css) ===== */
 .mr-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
@@ -57,8 +57,8 @@ html{overflow-y:scroll}
 @media(max-width:600px){.mr-grid{grid-template-columns:1fr}.mr-summary{flex-direction:column;align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){.mr-toast{transition:none}}
 </style>
-<script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261008-cases1"></script></head>
-<body>
+<script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261008-unified2"></script></head>
+<body data-unified-reports="true">
 
 <header class="site-header">
   <div class="container nav">
@@ -79,7 +79,7 @@ html{overflow-y:scroll}
   </div>
 </header>
 
-<main class="page-wrap container" aria-live="polite"><section class="section"><div class="kicker">SHARED REPORTS</div><h2>รายงานของฉันที่แชร์บนเว็บ</h2><p class="meta">อัปเดตอัตโนมัติทุก 15 วินาที เมื่อเปิดหน้านี้อยู่</p><p class="meta">สมาชิกเห็นชื่อผู้แจ้งและรายงาน ส่วนข้อมูลติดต่อเปิดเฉพาะผู้ที่ได้รับอนุมัติ</p><div id="cloudMyReports" role="region" aria-label="รายงานที่แชร์บนเว็บ"><p>กำลังโหลดรายงาน…</p></div><div id="legacyContactReports"></div></section><div id="view"></div></main>
+<main class="page-wrap container" aria-live="polite"><div id="reportDeleteNotice" role="status"></div><div id="view"></div><div id="cloudMyReports" hidden></div></main>
 
 <footer class="footer">
   <div class="container footer-row">
@@ -96,7 +96,7 @@ html{overflow-y:scroll}
 </div>
 <div class="mr-toast" id="toast" role="status"></div>
 
-<script src="reports-client.js?v=20261008-cases1"></script><script src="cases-client.js?v=20261008-cases1"></script><script src="app.js?v=20261008-cases1"></script>
+<script src="reports-client.js?v=20261008-unified2"></script><script src="cases-client.js?v=20261008-unified2"></script><script src="app.js?v=20261008-unified2"></script>
 
 <script>
 (() => {
@@ -190,7 +190,8 @@ html{overflow-y:scroll}
   /* ================= 4) UI HELPERS ================= */
   const fmtDate = d => { if (!d) return '-'; const t = new Date(d); return isNaN(t) ? escapeHTML(d) : t.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }); };
   const fmtDT = ts => new Date(ts).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-  const statusOf = r => r.status || 'Searching';
+  const caseFor = r => {const related=(window.FindMeMyCases||[]).filter(c=>(c.report_id===r.id||c.linked_report_id===r.id)&&c.status!=='Rejected');return related.find(c=>c.case_status==='Closed')||related.find(c=>c.status==='Approved')||related[0];};
+  const statusOf = r => {if(!r.isCloud)return r.status||'Searching';if(r.status==='Returned')return 'Returned';const c=caseFor(r);if(c?.case_status==='Closed')return 'Returned';if(c?.status==='Approved')return 'Verified';if(c||reportKind(r)==='found')return 'Found';return 'Searching';};
   const badge = r => { const [c, t] = STATUS[statusOf(r)] || ['lost', escapeHTML(statusOf(r))]; return `<span class="badge ${c}">${t}</span>`; };
   const photoBox = (r, cls = 'mr-photo') => { const p = safePhoto(r.photo); return `<div class="${cls}">${p ? `<img src="${escapeHTML(p)}" height="185" alt="${escapeHTML(r.itemName || 'รูปสิ่งของ')}">` : getIcon(r.category)}</div>`; };
 
@@ -211,7 +212,7 @@ html{overflow-y:scroll}
 
   function viewList() {
     let all;
-    try { all = getLost(); }
+    try {const cloud=window.FindMeOwnReports||[];all=[...cloud,...getLost().filter(r=>!cloud.some(c=>idEq(c.id,r.id)))];}
     catch { $('#view').innerHTML = `<div class="empty-state">อ่านข้อมูลรายงานไม่ได้ (ข้อมูลใน localStorage เสียหาย) ระบบยังไม่แก้ไขข้อมูลเดิม</div>`; return; }
 
     const n = k => k === 'all' ? all.length : all.filter(r => statusOf(r) === k).length;
@@ -220,15 +221,15 @@ html{overflow-y:scroll}
     $('#view').innerHTML = `
       <div class="page-title">
         <div class="kicker">YOUR ACTIVITY</div>
-        <h1>รายงานเก่าบนเครื่องนี้</h1>
-        <p>รายงานเก่าทั้งของหายและของที่พบ ยังไม่ได้ผูกกับบัญชีสมาชิก เพิ่มช่องทางและแชร์รายงานด้านบนเพื่อผูกกับบัญชีของคุณ</p>
+        <h1>My Reports</h1>
+        <p>ติดตามรายงานของคุณและการคืนของในที่เดียว อัปเดตอัตโนมัติขณะเปิดหน้านี้</p>
       </div>
       <div class="mr-tabs" role="group" aria-label="กรองตามสถานะ">
         ${TABS.map(([k, t]) => `<button type="button" class="mr-tab" data-filter="${k}" aria-pressed="${filter === k}">${t}<span>${n(k)}</span></button>`).join('')}
       </div>
       ${list.length ? `<div class="mr-grid">${list.map(card2).join('')}</div>` : `
         <div class="empty-state">
-          <strong>${all.length ? 'ไม่มีรายการในสถานะนี้' : 'ยังไม่มีรายงานเก่าบนเครื่องนี้'}</strong><br>
+          <strong>${all.length ? 'ไม่มีรายการในสถานะนี้' : 'ยังไม่มีรายงาน'}</strong><br>
           <span class="meta">${all.length ? 'ลองเลือกแท็บอื่น' : 'แจ้งของหายครั้งแรก แล้วรายการจะมาแสดงที่นี่'}</span><br><br>
           <a class="btn btn-orange" href="report-lost.html">Report a lost item</a>
         </div>`}`;
@@ -236,6 +237,7 @@ html{overflow-y:scroll}
 
   function card2(r) {
     const s = statusOf(r), id = escapeHTML(r.id), enc = encodeURIComponent(r.id);
+    if(r.isCloud){const c=caseFor(r);return `<article class="report-card mr-card">${photoBox(r)}<div class="mr-body">${badge(r)}<h3>${escapeHTML(r.itemName)}</h3><p class="meta">ผู้แจ้ง: ${escapeHTML(r.reporterName||window.FindMeUser?.name)}</p><p class="meta">${escapeHTML(r.category)} • ${escapeHTML(r.location)}</p><p class="meta">${reportKind(r)==='found'?'พบ':'หาย'}: ${fmtDate(r.date)} ${escapeHTML(r.time||'')}</p><p class="mr-desc">${escapeHTML(r.description)}</p></div><div class="mr-actions">${c?`<button type="button" class="btn btn-orange" data-open-case="${escapeHTML(c.id)}">${s==='Returned'?'ดูเคสที่ปิดแล้ว':'เปิดแชท / ยืนยันรับคืน'}</button>`:s!=='Returned'&&reportKind(r)==='lost'?`<button type="button" class="btn btn-orange" data-found-my-report="${id}">I found it — ยืนยันผ่านเคส</button>`:s==='Returned'?'<p class="meta">ได้รับของคืนเรียบร้อยแล้ว</p>':'<p class="meta">รอเจ้าของเปิดคำขอยืนยันและแชท</p>'}<button type="button" class="btn btn-danger" data-delete-cloud="${id}">ลบประกาศ</button></div></article>`;}
     const pt = validCoordinates(r.latitude, r.longitude);
     return `<article class="report-card mr-card">
       ${photoBox(r)}
@@ -243,7 +245,7 @@ html{overflow-y:scroll}
         ${badge(r)}
         <h3>${escapeHTML(r.itemName || 'Untitled item')}</h3>
         <div class="meta">${escapeHTML(r.category || 'Other')} • ${escapeHTML(r.location || 'KMITL Campus')}</div>
-        <div class="meta">หาย: ${fmtDate(r.date)} ${escapeHTML(r.time || '')}</div>
+        <div class="meta">${reportKind(r)==='found'?'พบ':'หาย'}: ${fmtDate(r.date)} ${escapeHTML(r.time || '')}</div>
         ${pt ? `<a class="text-link" href="${googleMapsLink(pt)}" target="_blank" rel="noopener noreferrer">📍 ดูตำแหน่งจริง ↗</a>` : ''}
         ${r.description ? `<p class="mr-desc">${escapeHTML(r.description)}</p>` : ''}
       </div>
@@ -253,6 +255,7 @@ html{overflow-y:scroll}
         ${s === 'Verified' ? `<button type="button" class="btn btn-dark" data-act="return" data-id="${id}">ได้รับของคืนแล้ว</button><a class="btn btn-light" href="#/verify/${enc}">ดูผล</a>` : ''}
         ${s === 'Searching' ? `<a class="btn btn-light" href="${reportLink(r)}">View matches</a>` : ''}
         ${s === 'Locked' ? `<a class="btn btn-light" href="#/verify/${enc}">รายละเอียด</a>` : ''}
+        <button type="button" class="btn btn-light" data-publish-old="${id}">แชร์และใช้แชทในเว็บ</button>
         <button type="button" class="btn btn-danger" data-act="delete" data-id="${id}">ลบ</button>
       </div>
     </article>`;
@@ -375,6 +378,7 @@ html{overflow-y:scroll}
     window.scrollTo(0, 0);
     m ? viewVerify(decodeURIComponent(m[1])) : viewList();
   }
+  window.addEventListener('findme-own-reports-updated',()=>{if(!/^#\/verify\//.test(location.hash))viewList();});
   window.addEventListener('hashchange', route);
   window.addEventListener('pageshow', route);                       // กลับมาจากหน้าอื่นแล้วข้อมูลสดเสมอ
   window.addEventListener('storage', e => {                         // อีกแท็บแก้ข้อมูล → รีเฟรชหน้านี้
