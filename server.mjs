@@ -32,7 +32,7 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
   } finally { if (userId) await pool.query('DELETE FROM findme_users WHERE id=$1',[userId]); }
 }
 const root = dirname(fileURLToPath(import.meta.url));
-const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','found-ai.js']);
+const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','found-ai.js','ai-test.html','ai-test.js','ai-evaluation.js']);
 const origins = new Set((process.env.ALLOWED_ORIGINS || 'https://jellypabo1998-max.github.io').split(',').map(s=>s.trim()));
 const limits = new Map();
 let activeAuth = 0;

@@ -30,3 +30,7 @@ KMITL FindMe AI — Static HTML Website
 
 - นำหน้าค้นหาด้วยรูปที่เพิ่มแยกออกแล้ว; ใช้ Report Found และ Matches เดิม
 - ลิงก์หน้าค้นหารูปเก่ากลับไปหน้า Home และไม่โหลดโมเดล CLIP/Roboflow
+
+- Report Found ใช้ Workflow Roboflow ที่เทรนแล้วเพื่อแนะนำหมวด; AI matching เดิมยังเป็น mock
+- Home → ทดสอบ AI 10 รอบ: เลือกรูปใหม่และคำตอบจริงก่อนเริ่ม ล็อกคำตอบ แล้วเปรียบเทียบ top prediction; ถูก 8/10 ผ่าน ไม่ใช้ confidence เป็นเกณฑ์
+- การทดสอบเรียก API จริง ใช้เครดิต Roboflow ข้อผิดพลาด API ไม่นับเป็นคำตอบผิด และส่งออกผล CSV ได้
