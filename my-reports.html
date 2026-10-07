@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Reports — FindMe AI</title>
-<link rel="stylesheet" href="style.css?v=20261007-private2">
+<link rel="stylesheet" href="style.css?v=20261007-reportsfix3">
 <style>
 /* ===== ส่วนเสริมเฉพาะหน้านี้ (ใช้ตัวแปรสี/ฟอนต์จาก style.css) ===== */
 .mr-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
@@ -57,7 +57,7 @@ html{overflow-y:scroll}
 @media(max-width:600px){.mr-grid{grid-template-columns:1fr}.mr-summary{flex-direction:column;align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){.mr-toast{transition:none}}
 </style>
-<script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261006-home2"></script></head>
+<script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261007-reportsfix3"></script></head>
 <body>
 
 <header class="site-header">
@@ -79,7 +79,7 @@ html{overflow-y:scroll}
   </div>
 </header>
 
-<main class="page-wrap container" id="view" aria-live="polite"><section class="section"><div class="kicker">SHARED REPORTS</div><h2>รายงานของฉันที่แชร์บนเว็บ</h2><p class="meta">อัปเดตอัตโนมัติทุก 15 วินาที เมื่อเปิดหน้านี้อยู่</p><p class="meta">สมาชิกเห็นรายงานและช่องทางติดต่อเพื่อนัดคืนของได้</p><div id="cloudMyReports" role="region" aria-label="รายงานที่แชร์บนเว็บ"><p>กำลังโหลดรายงาน…</p></div><div id="legacyContactReports"></div></section></main>
+<main class="page-wrap container" aria-live="polite"><section class="section"><div class="kicker">SHARED REPORTS</div><h2>รายงานของฉันที่แชร์บนเว็บ</h2><p class="meta">อัปเดตอัตโนมัติทุก 15 วินาที เมื่อเปิดหน้านี้อยู่</p><p class="meta">สมาชิกเห็นชื่อผู้แจ้งและรายงาน ส่วนข้อมูลติดต่อเปิดเฉพาะผู้ที่ได้รับอนุมัติ</p><div id="cloudMyReports" role="region" aria-label="รายงานที่แชร์บนเว็บ"><p>กำลังโหลดรายงาน…</p></div><div id="legacyContactReports"></div></section><div id="view"></div></main>
 
 <footer class="footer">
   <div class="container footer-row">
@@ -96,7 +96,7 @@ html{overflow-y:scroll}
 </div>
 <div class="mr-toast" id="toast" role="status"></div>
 
-<script src="reports-client.js?v=20261007-private2"></script><script src="app.js?v=20261007-private2"></script>
+<script src="reports-client.js?v=20261007-reportsfix3"></script><script src="app.js?v=20261007-reportsfix3"></script>
 
 <script>
 (() => {
@@ -147,7 +147,7 @@ html{overflow-y:scroll}
     catch { toast('บันทึกไม่สำเร็จ พื้นที่เก็บข้อมูลอาจเต็ม'); return false; }
   }
   const isLost = r => r && typeof r === 'object' && reportKind(r) === 'lost';
-  const getLost = () => loadAll().filter(r => isLost(r) && !r.sharedReportId);
+  const getLost = () => loadAll().filter(r => !r.sharedReportId);
   const getOne = id => getLost().find(r => idEq(r.id, id)) || null;
   function patch(id, fields) {
     const all = loadAll(), r = all.find(x => x && idEq(x.id, id));
@@ -221,14 +221,14 @@ html{overflow-y:scroll}
       <div class="page-title">
         <div class="kicker">YOUR ACTIVITY</div>
         <h1>รายงานเก่าบนเครื่องนี้</h1>
-        <p>ติดตามสถานะรายการที่คุณแจ้งหาย ข้อมูลที่กรอกใน prototype จะเก็บไว้ในเบราว์เซอร์เครื่องนี้</p>
+        <p>รายงานเก่าทั้งของหายและของที่พบ ยังไม่ได้ผูกกับบัญชีสมาชิก เพิ่มช่องทางและแชร์รายงานด้านบนเพื่อผูกกับบัญชีของคุณ</p>
       </div>
       <div class="mr-tabs" role="group" aria-label="กรองตามสถานะ">
         ${TABS.map(([k, t]) => `<button type="button" class="mr-tab" data-filter="${k}" aria-pressed="${filter === k}">${t}<span>${n(k)}</span></button>`).join('')}
       </div>
       ${list.length ? `<div class="mr-grid">${list.map(card2).join('')}</div>` : `
         <div class="empty-state">
-          <strong>${all.length ? 'ไม่มีรายการในสถานะนี้' : 'ยังไม่มีรายการที่แจ้งหาย'}</strong><br>
+          <strong>${all.length ? 'ไม่มีรายการในสถานะนี้' : 'ยังไม่มีรายงานเก่าบนเครื่องนี้'}</strong><br>
           <span class="meta">${all.length ? 'ลองเลือกแท็บอื่น' : 'แจ้งของหายครั้งแรก แล้วรายการจะมาแสดงที่นี่'}</span><br><br>
           <a class="btn btn-orange" href="report-lost.html">Report a lost item</a>
         </div>`}`;

@@ -15,6 +15,7 @@ function card(item) {
   return `<article class="item-card">
     <div class="item-photo">${photo ? `<img src="${escapeHTML(photo)}" alt="${escapeHTML(item.name)}" style="width:100%;height:100%;object-fit:cover">` : item.icon}</div>
     <div class="item-top"><h3>${escapeHTML(item.name)}</h3><span class="badge ${item.type === 'Found' ? 'found' : 'lost'}">${item.type}</span></div>
+    <div class="meta">ผู้แจ้ง: ${escapeHTML(item.reporterName||item.username||'รายงานเก่าบนเครื่องนี้')}</div>
     <div class="meta">${escapeHTML(item.category)} • ${escapeHTML(item.location)}</div>
     <div class="meta">${escapeHTML(item.time)}</div>
     <div class="meta">รายงานที่บันทึก</div>
@@ -38,14 +39,14 @@ window.FindMeOpenItem = function(item) {
     <p class="meta">${escapeHTML(item.category||'Other')} • ${escapeHTML(item.location||'ไม่ระบุสถานที่')}</p>
     <p class="meta">${escapeHTML(item.time||[item.date,item.time].filter(Boolean).join(' ')||'')}</p>
     <p class="item-details-description">${escapeHTML(item.description||'ไม่มีรายละเอียดเพิ่มเติม')}</p>
-    <div class="form-actions">${point?`<a class="btn btn-light" href="${googleMapsLink(point)}" target="_blank" rel="noopener noreferrer">เปิดตำแหน่งใน Google Maps ↗</a>`:''}${item.id?`<a class="btn btn-dark" href="${reportLink(item)}">ดูรายการที่ตรงกัน</a>`:''}</div>`;
+    <div class="form-actions">${point?`<a class="btn btn-light" href="${googleMapsLink(point)}" target="_blank" rel="noopener noreferrer">เปิดตำแหน่งใน Google Maps ↗</a>`:''}${item.id?`<a class="btn btn-dark" href="${reportLink(item)}" data-related-report>ดูรายการหมวดเดียวกัน</a>`:''}</div>`;
   dialog.querySelector('[data-close-item]').addEventListener('click',()=>dialog.close());
   if(!dialog.open)dialog.showModal();
 };
 document.addEventListener('click',event=>{
   const button=event.target.closest('[data-item-details]');if(!button)return;
   const item=allBrowseItems().find(row=>String(row.id)===button.dataset.itemDetails);
-  if(item){event.preventDefault();window.FindMeOpenItem(item);}
+  event.preventDefault();if(item)window.FindMeOpenItem(item);else alert('ยังโหลดรายงานนี้ไม่ได้ กรุณารอข้อมูลหรือรีเฟรชหน้า');
 });
 
 function validCoordinates(latitude, longitude) {

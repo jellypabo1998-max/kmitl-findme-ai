@@ -16,7 +16,7 @@ window.FindMeAuthReady = (async () => {
   const rememberNavigation=href=>{
     try {
       const target=new URL(href,location.href);
-      if(target.origin===location.origin&&target.pathname!==location.pathname){
+      if(target.origin===location.origin&&!target.hash){
         sessionStorage.setItem(navigationKey,JSON.stringify({path:target.pathname,at:Date.now()}));
       }
     } catch {}
@@ -33,9 +33,6 @@ window.FindMeAuthReady = (async () => {
   // Only a fresh navigation selected within this tab may open a subpage.
   // Restored tabs, saved links, and reloads start at Home after session validation.
   const startAtHome=!isHome&&!internalEntry;
-  window.addEventListener('pageshow',event=>{
-    if(event.persisted&&!isHome&&window.FindMeUser)location.replace('index.html');
-  });
   const config=window.FINDME_AUTH_API || '';
   const api=config.replace(/\/$/,'');
   let session=null;
