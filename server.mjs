@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { classifyFoundPhoto } from './roboflow-cloud.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -31,10 +32,12 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
   } finally { if (userId) await pool.query('DELETE FROM findme_users WHERE id=$1',[userId]); }
 }
 const root = dirname(fileURLToPath(import.meta.url));
-const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js']);
+const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','found-ai.js']);
 const origins = new Set((process.env.ALLOWED_ORIGINS || 'https://jellypabo1998-max.github.io').split(',').map(s=>s.trim()));
 const limits = new Map();
 let activeAuth = 0;
+let activeVision=0;
+const visionLimits=new Map();
 const server = http.createServer(async (req,res) => {
   const origin = req.headers.origin;
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -52,6 +55,17 @@ const server = http.createServer(async (req,res) => {
     const path = new URL(req.url,'http://localhost').pathname;
     if(path==='/auth-config.js'&&req.method==='GET'&&process.env.SELF_HOSTED_AUTH==='true'){res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8'});return res.end('window.FINDME_AUTH_API = window.location.origin;');}
     if (path==='/health' && req.method==='GET') { await pool.query('SELECT 1'); return reply(200,{ok:true}); }
+    if(path==='/api/vision/classify' && req.method==='POST') {
+      const user=await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
+      const now=Date.now();let rate=visionLimits.get(user.id);
+      if(!rate||rate.until<now){rate={count:0,until:now+3600000};visionLimits.set(user.id,rate);}
+      if(rate.count>=20||activeVision>=2)throw new AuthError(429,'วิเคราะห์ครบโควตาชั่วคราว กรุณาลองภายหลัง');
+      if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new AuthError(400,'Invalid request');
+      let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>2800000)throw new AuthError(413,'รูปใหญ่เกินไป');chunks.push(chunk);}
+      let data;try{data=JSON.parse(Buffer.concat(chunks).toString());}catch{throw new AuthError(400,'Invalid request');}
+      rate.count++;activeVision++;
+      try{return reply(200,await classifyFoundPhoto(data?.image));}finally{activeVision--;}
+    }
     if (path.startsWith('/api/auth/')) {
       const token = (req.headers.authorization || '').replace(/^Bearer /,'');
       if (path==='/api/auth/me' && req.method==='GET') return reply(200,{user:await accounts.me(token)});
