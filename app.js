@@ -1,63 +1,13 @@
-const ITEMS = [
-  {
-    name: 'House Keys',
-    type: 'Found',
-    category: 'Keys',
-    location: 'Science Building',
-    time: 'Today 14:20',
-    icon: '🔑'
-  },
-  {
-    name: 'Black Wallet',
-    type: 'Found',
-    category: 'Wallet',
-    location: 'Library',
-    time: 'Today 11:05',
-    icon: '👛'
-  },
-  {
-    name: 'Reading Glasses',
-    type: 'Lost',
-    category: 'Glasses',
-    location: 'Cafeteria',
-    time: 'Yesterday',
-    icon: '👓'
-  },
-  {
-    name: 'Dorm Keys',
-    type: 'Lost',
-    category: 'Keys',
-    location: 'Dormitory',
-    time: 'Yesterday',
-    icon: '🔑'
-  },
-  {
-    name: 'Water Bottle',
-    type: 'Found',
-    category: 'Bottle',
-    location: 'Sports Complex',
-    time: '2 days ago',
-    icon: '🧴'
-  },
-  {
-    name: 'Smartphone',
-    type: 'Lost',
-    category: 'Phone',
-    location: 'Engineering Building',
-    time: '2 days ago',
-    icon: '📱'
-  }
-];
 /* =========================================
    BROWSE ITEMS
 ========================================= */
 function allBrowseItems() {
   let saved = [];
-  try { saved = readReports(); } catch { /* Keep the demo catalog usable. */ }
+  try { saved = readReports(); } catch { /* Leave saved data untouched if it cannot be read. */ }
   return [...saved.filter(r => r.status !== 'Returned').map(r => ({...r,
     name: r.itemName, type: reportKind(r) === 'found' ? 'Found' : 'Lost',
     time: [r.date, r.time].filter(Boolean).join(' '), icon: getIcon(r.category)
-  })), ...ITEMS.map(item => ({...item, isDemo: true}))];
+  }))];
 }
 function card(item) {
   const photo = safePhoto(item.photo);
@@ -67,7 +17,7 @@ function card(item) {
     <div class="item-top"><h3>${escapeHTML(item.name)}</h3><span class="badge ${item.type === 'Found' ? 'found' : 'lost'}">${item.type}</span></div>
     <div class="meta">${escapeHTML(item.category)} • ${escapeHTML(item.location)}</div>
     <div class="meta">${escapeHTML(item.time)}</div>
-    <div class="meta">${item.isDemo ? 'ข้อมูลตัวอย่าง' : 'รายงานที่บันทึก'}</div>
+    <div class="meta">รายงานที่บันทึก</div>
     ${point ? `<a class="text-link" href="${googleMapsLink(point)}" target="_blank" rel="noopener noreferrer">📍 ดูตำแหน่งจริง ↗</a><br>` : '<div class="meta">ยังไม่มีพิกัด</div>'}
     <a class="text-link" ${item.id ? `data-item-details="${escapeHTML(item.id)}"` : ''} href="${item.id ? reportLink(item) : item.type === 'Found' ? 'verify.html' : 'matches.html'}">View details →</a>
   </article>`;
@@ -108,13 +58,13 @@ function googleMapsLink(point) {
 }
 function renderItems(
   target = 'itemsGrid',
-  list = ITEMS
+  list = allBrowseItems()
 ) {
   const el =
     document.getElementById(target);
   if (!el) return;
   el.innerHTML =
-    list.map(card).join('');
+    list.length ? list.map(card).join('') : '<p class="meta" role="status">ยังไม่มีรายงานที่ตรงกับการค้นหา รายงานที่แจ้งจะบันทึกไว้ในเบราว์เซอร์เครื่องนี้</p>';
 }
 /* =========================================
    SEARCH / BROWSE
@@ -261,155 +211,13 @@ function safePhoto(photo) {
 }
 function getMatchCandidates(report, saved = readReports()) {
   const targetType = reportKind(report) === 'found' ? 'Lost' : 'Found';
-  const actual = saved.filter(r => String(r.id) !== String(report.id) && r.status !== 'Returned'
-    && (reportKind(r) === 'found' ? 'Found' : 'Lost') === targetType)
-    .map(r => ({...r, name: r.itemName, type: targetType, time: [r.date, r.time].filter(Boolean).join(' '), icon: getIcon(r.category)}));
-  const demos = ITEMS.filter(item => item.type === targetType).map(item => ({...item, isDemo: true}));
-  return [...actual, ...demos].map(item => ({item, ...calculateMatch(report, item)}))
-    .sort((a, b) => b.score - a.score).slice(0, 3);
+  return saved.filter(r => String(r.id) !== String(report.id) && r.status !== 'Returned'
+    && (reportKind(r) === 'found' ? 'Found' : 'Lost') === targetType
+    && String(r.category || '').trim().toLowerCase() === String(report.category || '').trim().toLowerCase())
+    .map(r => ({item: {...r, name: r.itemName, type: targetType,
+      time: [r.date, r.time].filter(Boolean).join(' '), icon: getIcon(r.category)}}));
 }
-/* =========================================
-   HELPER FUNCTIONS
-========================================= */
-function normalize(value) {
-  return String(
-    value || ''
-  )
-  .trim()
-  .toLowerCase();
-}
-function locationScore(
-  a,
-  b
-) {
-  const x =
-    normalize(a);
-  const y =
-    normalize(b);
-  if (!x || !y) {
-    return 55;
-  }
-  if (x === y) {
-    return 100;
-  }
-  if (
-    x.includes(y) ||
-    y.includes(x)
-  ) {
-    return 92;
-  }
-  const words =
-    x.split(
-      /[\s,.-]+/
-    )
-    .filter(Boolean);
-  const hits =
-    words.filter(
-      word =>
-        word.length > 2 &&
-        y.includes(word)
-    );
-  if (hits.length) {
-    return Math.min(
-      88,
-      70 + hits.length * 8
-    );
-  }
-  return 55;
-}
-function categoryScore(
-  a,
-  b
-) {
-  return normalize(a) ===
-    normalize(b)
-    ? 100
-    : 25;
-}
-function descriptionScore(
-  description,
-  itemName
-) {
-  const a =
-    normalize(description);
-  const b =
-    normalize(itemName);
-  if (!a) {
-    return 55;
-  }
-  const words =
-    b
-      .split(/\s+/)
-      .filter(
-        word =>
-          word.length > 2
-      );
-  const hits =
-    words.filter(
-      word =>
-        a.includes(word)
-    );
-  if (hits.length) {
-    return Math.min(
-      95,
-      72 + hits.length * 10
-    );
-  }
-  return 58;
-}
-/* =========================================
-   AI MATCH CALCULATION
-========================================= */
-function calculateMatch(
-  report,
-  item
-) {
-  const category =
-    categoryScore(
-      report.category,
-      item.category
-    );
-  const location =
-    locationScore(
-      report.location,
-      item.location
-    );
-  const description =
-    descriptionScore(
-      report.description,
-      item.name
-    );
-  /*
-   * Prototype image score.
-   *
-   * ตอนนี้เป็น Demo
-   * ยังไม่ได้เชื่อม Computer Vision Model
-   */
-  const image =
-    category === 100
-      ? 88
-      : 62;
-  /*
-   * Weighted AI score
-   */
-  const score =
-    Math.round(
-      image * 0.40 +
-      category * 0.25 +
-      location * 0.20 +
-      description * 0.15
-    );
-  return {
-    score,
-    image,
-    category,
-    location,
-    description
-  };
-}
-/* =========================================
-   GET LATEST REPORT
-========================================= */
+/* รายการหมวดเดียวกันเป็นการกรองข้อมูลจริง ไม่ใช่คะแนนความคล้ายของภาพ */
 function getLatestReport() {
   const saved = readReports();
   const id = new URLSearchParams(location.search).get('report');
@@ -587,36 +395,22 @@ function renderSubmittedItem(
    RENDER AI MATCHES
 ========================================= */
 function renderMatches() {
-  const listEl =
-    document.getElementById(
-      'matchList'
-    );
-  const summaryEl =
-    document.getElementById(
-      'matchSummary'
-    );
+  const listEl = document.getElementById('matchList');
+  const summaryEl = document.getElementById('matchSummary');
   if (!listEl) return;
-  const report =
-    (() => { try { return getLatestReport(); } catch { return null; } })();
-  renderSubmittedItem(
-    report
-  );
+  let report, candidates;
+  try {
+    report = getLatestReport();
+    candidates = report ? getMatchCandidates(report) : [];
+  } catch {
+    if (summaryEl) summaryEl.textContent = 'อ่านรายงานที่บันทึกไม่ได้ ข้อมูลเดิมยังอยู่';
+    listEl.replaceChildren();
+    return;
+  }
+  renderSubmittedItem(report);
   if (!report) {
-    listEl.innerHTML = '';
-    if (summaryEl) {
-      summaryEl.innerHTML = `
-        <div
-          class="form-card"
-          style="
-            margin-bottom:20px;
-          "
-        >
-          <p>
-            Please submit a report first.
-          </p>
-        </div>
-      `;
-    }
+    listEl.replaceChildren();
+    if (summaryEl) summaryEl.textContent = 'กรุณาส่งรายงานก่อนดูรายการที่เกี่ยวข้อง';
     return;
   }
   const point = validCoordinates(report.latitude, report.longitude);
@@ -626,232 +420,21 @@ function renderMatches() {
     pin.textContent = `📍 ${point.lat.toFixed(6)}, ${point.lng.toFixed(6)} — เปิด Google Maps ↗`;
     document.getElementById('submittedItemContent')?.append(pin);
   }
-  const candidates = getMatchCandidates(report);
   const another = document.getElementById('reportAnother');
   if (another) {
     another.href = reportKind(report) === 'found' ? 'report-found.html' : 'report-lost.html';
     another.textContent = reportKind(report) === 'found' ? '← Report another found item' : '← Report another lost item';
   }
-  const top =
-    candidates[0];
-  /* =====================================
-     AI SUMMARY
-  ===================================== */
-  if (
-    summaryEl &&
-    top
-  ) {
-    summaryEl.innerHTML = `
-      <div
-        class="form-card"
-        style="
-          margin-bottom:20px;
-        "
-      >
-        <div class="kicker">
-          AI RESULT
-        </div>
-        <h2
-          style="
-            margin:4px 0 8px;
-          "
-        >
-          ${top.score}%
-          potential match
-        </h2>
-        <p
-          class="meta"
-          style="margin:0;"
-        >
-          พบ ${
-            candidates.length
-          }
-          รายการที่มีความเป็นไปได้
-          จากข้อมูลที่คุณแจ้ง
-        </p>
-      </div>
-    `;
-  }
-  /* =====================================
-     MATCH CARDS
-  ===================================== */
-  listEl.innerHTML =
-    candidates
-      .map(
-        (result,index) => {
-          const item =
-            result.item;
-          const icon =
-            item.icon ||
-            getIcon(
-              item.category
-            );
-          const imageHTML =
-            safePhoto(item.photo)
-              ? `
-                <img
-                  src="${safePhoto(item.photo)}"
-                  alt="${escapeHTML(item.name)}"
-                  style="
-                    width:100%;
-                    height:100%;
-                    object-fit:cover;
-                  "
-                >
-              `
-              : icon;
-          return `
-            <article
-              class="match-card"
-            >
-              <!-- IMAGE -->
-              <div
-                class="match-photo"
-              >
-                ${imageHTML}
-              </div>
-              <!-- INFORMATION -->
-              <div>
-                <div
-                  class="kicker"
-                >
-                  ${
-                    index === 0
-                      ? 'TOP MATCH'
-                      : 'POSSIBLE MATCH'
-                  }
-                </div>
-                <p class="meta">${item.isDemo ? "Sample report / ข้อมูลตัวอย่าง" : "Saved report / รายงานที่บันทึก"}</p>
-                <h3>
-                  ${
-                    escapeHTML(
-                      item.name
-                    )
-                  }
-                </h3>
-                <p>
-                  ${
-                    escapeHTML(
-                      item.category
-                    )
-                  }
-                  •
-                  ${
-                    escapeHTML(
-                      item.location
-                    )
-                  }
-                  •
-                  ${
-                    escapeHTML(
-                      item.time
-                    )
-                  }
-                </p>
-                <!-- METRICS -->
-                <div
-                  class="metrics"
-                >
-                  <div
-                    class="metric"
-                  >
-                    <span>
-                      Image (demo)
-                    </span>
-                    <b>
-                      ${
-                        result.image
-                      }%
-                    </b>
-                  </div>
-                  <div
-                    class="metric"
-                  >
-                    <span>
-                      Category
-                    </span>
-                    <b>
-                      ${
-                        result.category
-                      }%
-                    </b>
-                  </div>
-                  <div
-                    class="metric"
-                  >
-                    <span>
-                      Location
-                    </span>
-                    <b>
-                      ${
-                        result.location
-                      }%
-                    </b>
-                  </div>
-                  <div
-                    class="metric"
-                  >
-                    <span>
-                      Description
-                    </span>
-                    <b>
-                      ${
-                        result.description
-                      }%
-                    </b>
-                  </div>
-                </div>
-                <!-- WHY MATCH -->
-                <p
-                  class="meta"
-                  style="
-                    margin-top:12px;
-                  "
-                >
-                  ${
-                    result.category >= 80
-                      ? '✓ Same category'
-                      : '✗ Different category'
-                  }
-                  •
-                  ${
-                    result.location >= 80
-                      ? '✓ Similar location'
-                      : 'Location differs'
-                  }
-                  •
-                  ${
-                    result.description >= 70
-                      ? '✓ Similar description'
-                      : 'Description is less similar'
-                  }
-                </p>
-              </div>
-              <!-- SCORE -->
-              <div
-                class="score"
-              >
-                <strong>
-                  ${
-                    result.score
-                  }%
-                </strong>
-                <a
-                  class="btn ${
-                    index === 0
-                      ? 'btn-dark'
-                      : 'btn-light'
-                  }"
-                  href="verify.html"
-                >
-                  View match
-                </a>
-              </div>
-            </article>
-          `;
-        }
-      )
-      .join('');
+  if (summaryEl) summaryEl.innerHTML = `<div class="form-card" style="margin-bottom:20px">
+    <h2>${candidates.length ? `พบ ${candidates.length} รายงานในหมวดเดียวกัน` : 'ยังไม่มีรายงานหมวดเดียวกัน'}</h2>
+    <p class="meta">รายการจากข้อมูลที่บันทึกในเบราว์เซอร์เครื่องนี้ กรุณาตรวจรูป รายละเอียด และสถานที่ด้วยตัวเอง</p></div>`;
+  listEl.innerHTML = candidates.map(({item}) => `<article class="match-card">
+    <div class="match-photo">${safePhoto(item.photo) ? `<img src="${escapeHTML(safePhoto(item.photo))}" alt="${escapeHTML(item.name)}" style="width:100%;height:100%;object-fit:contain">` : getIcon(item.category)}</div>
+    <div><div class="kicker">SAVED REPORT</div><h3>${escapeHTML(item.name)}</h3>
+    <p>${escapeHTML(item.category)} • ${escapeHTML(item.location)} • ${escapeHTML(item.time)}</p>
+    <p>${escapeHTML(item.description || '')}</p></div>
+    <div><a class="btn btn-light" href="${reportLink(item)}" data-item-details="${escapeHTML(item.id)}">ดูรายละเอียด</a></div>
+    </article>`).join('');
 }
 /* =========================================
    MY REPORTS
@@ -863,29 +446,7 @@ function renderReports() {
     );
   if (!grid) return;
   const saved = (() => { try { return readReports(); } catch { return []; } })();
-  const demo = [
-    {
-      itemName:
-        'House Keys',
-      location:
-        'Science Building',
-      status:
-        'Searching'
-    },
-    {
-      itemName:
-        'Black Wallet',
-      location:
-        'Library',
-      status:
-        'Potential Match'
-    }
-  ];
-  const rows =
-    [
-      ...saved,
-      ...demo
-    ];
+  const rows = saved;
   grid.innerHTML =
     rows
       .map(
