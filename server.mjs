@@ -9,19 +9,24 @@ import pg from 'pg';
 import { Accounts, AuthError } from './auth-service.mjs';
 import { PostgresStore } from './auth-store.mjs';
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 5, connectionTimeoutMillis: 10000 });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 5, connectionTimeoutMillis: 10000, statement_timeout: 15000, query_timeout: 20000 });
 pool.on('error', () => console.error('Database pool connection error'));
 const store = new PostgresStore(pool);
+console.log('Startup: account schema');
 await store.init();
 const accounts = new Accounts(store);
+console.log('Startup: account crypto');
 await accounts.init();
 const reports=new Reports(pool);
+console.log('Startup: case schema');
 await reports.init();
+console.log('Startup: schema ready');
 // Disposable test account checks actual database writes, hashes, sessions and revocation.
 if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
   const tag = randomBytes(8).toString('hex'), password = randomBytes(24).toString('hex');
   let userId,requesterId;
   try {
+    console.log('Startup: disposable account smoke test');
     const registered = await accounts.register({username:`test_${tag}`,email:`${tag}@example.invalid`,password});
     userId = registered.user.id;
     if ((await accounts.me(registered.token)).id !== userId) throw new Error('Session test failed');
@@ -29,6 +34,7 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
     if(!(await reports.list(registered.user,true)).some(r=>r.id===testReport.id))throw new Error('Report persistence test failed');
     if(!(await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id&&!r.contactValue&&r.isOwner===false))throw new Error('Shared report visibility test failed');
     try{await reports.contact({id:'00000000-0000-0000-0000-000000000000',name:'other'},testReport.id,{contactMethod:'email',contactValue:'test@example.invalid',contactConsent:true});throw new Error('Report ownership failed');}catch(e){if(e.status!==404)throw e;}
+    console.log('Startup: disposable requester and linked report');
     const requester=await accounts.register({username:`claim_${tag}`,email:`claim_${tag}@example.invalid`,password});requesterId=requester.user.id;
     const lostReport=await reports.create(requester.user,{itemName:'Database smoke lost',description:'Synthetic blue tag',location:'KMITL',category:'Keys',kind:'lost',date:'2026-10-07',latitude:13.727478,longitude:100.775952,contactMethod:'inapp'});
     await reports.claim(requester.user,testReport.id,{answers:{detail:'Synthetic blue tag',date:'2026-10-07',location:'KMITL',confirm:true},linkedReportId:lostReport.id});
