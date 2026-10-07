@@ -1,0 +1,42 @@
+(() => {
+ const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let cache=[];
+ async function request(path,data){
+  const session=JSON.parse(localStorage.getItem('findme_session_v1')||sessionStorage.getItem('findme_session_v1')||'null');
+  const res=await fetch(window.FINDME_AUTH_API+'/api/reports'+path,{method:data?'POST':'GET',headers:{Authorization:'Bearer '+(session?.token||''),...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(30000)});
+  const out=await res.json();if(!res.ok)throw new Error(out.error||'บันทึกรายงานไม่สำเร็จ');return out;
+ }
+ function contactHTML(r){
+  if(!r.isCloud||!r.contactValue)return '<p class="meta">รายงานเก่านี้ยังไม่มีช่องทางติดต่อ ผู้แจ้งเพิ่มได้จาก My Reports</p>';
+  const value=esc(r.contactValue), method=r.contactMethod;
+  const action=method==='line'?`<button type="button" class="btn btn-orange" data-copy-line="${value}">คัดลอก LINE ID</button>`:method==='phone'?`<a class="btn btn-orange" href="tel:${esc(r.contactValue.replace(/[ -]/g,''))}">โทรหาผู้แจ้ง</a>`:`<a class="btn btn-orange" href="mailto:${encodeURIComponent(r.contactValue)}">ส่งอีเมลถึงผู้แจ้ง</a>`;
+  return `<section class="report-contact"><b>ติดต่อ ${esc(r.reporterName||'ผู้แจ้ง')}</b><p>${method==='line'?'LINE ID':method==='phone'?'โทร':'อีเมล'}: ${value}</p>${action}<p class="meta">สอบถามจุดสังเกตเพื่อยืนยันของ แล้วนัดรับในที่สาธารณะ เมื่อคืนเสร็จ ผู้แจ้งปิดรายงานได้ใน My Reports</p></section>`;
+ }
+ async function photo(file){
+  if(!file)return '';let blob=file;
+  if(typeof file==='string'){if(!/^data:image\/(jpeg|png|webp);base64,/.test(file))throw new Error('รูปไม่ถูกต้อง');blob=await(await fetch(file)).blob();}
+  if(blob.size>2*1024*1024)throw new Error('รูปใหญ่เกิน 2 MB');
+  const image=await createImageBitmap(blob), ratio=Math.min(1,640/Math.max(image.width,image.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*ratio));canvas.height=Math.max(1,Math.round(image.height*ratio));const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);image.close();const result=canvas.toDataURL('image/jpeg',.72);if(result.length>550000)throw new Error('รูปยังใหญ่เกินไป กรุณาเลือกรูปเล็กลง');return result;
+ }
+ async function create(data){const result=await request('',data);cache=[result.report,...cache.filter(r=>r.id!==result.report.id)];return result.report;}
+ window.FindMeReports={list:()=>cache,request,create,contactHTML,photo};
+ window.FindMeReportsReady=(async()=>{await window.FindMeAuthReady;if(!window.FindMeUser)return;try{cache=(await request('')).reports;}catch(e){const p=document.createElement('p');p.className='container meta';p.setAttribute('role','alert');p.textContent='โหลดรายงานที่แชร์บนเว็บไม่ได้: '+e.message;document.querySelector('main')?.prepend(p);}})();
+ document.addEventListener('click',async e=>{const btn=e.target.closest('[data-copy-line]');if(!btn)return;try{await navigator.clipboard.writeText(btn.dataset.copyLine);btn.textContent='คัดลอกแล้ว — เปิด LINE แล้วค้นหา ID นี้';}catch{btn.textContent='LINE ID: '+btn.dataset.copyLine;}});
+ async function ownReports(){
+  const box=document.getElementById('cloudMyReports');if(!box)return;
+  try{const mine=(await request('?mine=1')).reports;box.innerHTML=mine.length?mine.map(r=>`<article class="form-card" style="margin-bottom:16px"><span class="badge ${r.status==='Returned'?'found':'lost'}">${r.status==='Returned'?'คืนของเรียบร้อย':r.kind==='found'?'พบของ — รอเจ้าของติดต่อ':'กำลังตามหา'}</span><h3>${esc(r.itemName)}</h3>${r.photo?`<img src="${esc(r.photo)}" alt="${esc(r.itemName)}" style="width:100%;max-width:320px;height:180px;object-fit:contain">`:''}<p>${esc(r.category)} • ${esc(r.location)}</p>${contactHTML(r)}<div class="form-actions"><button type="button" class="btn btn-light" data-edit-contact="${r.id}">แก้ช่องทางติดต่อ</button><button type="button" class="btn btn-dark" data-return-report="${r.id}" data-next-status="${r.status==='Returned'?(r.kind==='found'?'Submitted':'Searching'):'Returned'}">${r.status==='Returned'?'เปิดรายงานอีกครั้ง':r.kind==='found'?'ส่งคืนเจ้าของแล้ว':'ได้รับของคืนแล้ว'}</button></div></article>`).join(''):'<p class="meta">ยังไม่มีรายงานที่แชร์บนเว็บ แจ้งของใหม่หรือเพิ่มช่องทางติดต่อให้รายงานเก่าด้านล่างได้</p>';
+   box.querySelectorAll('[data-edit-contact]').forEach(btn=>btn.addEventListener('click',()=>openContact(mine.find(r=>r.id===btn.dataset.editContact))));
+   box.querySelectorAll('[data-return-report]').forEach(btn=>btn.addEventListener('click',async()=>{btn.disabled=true;try{await request('/'+btn.dataset.returnReport+'/status',{status:btn.dataset.nextStatus});await ownReports();}catch(e){btn.disabled=false;const p=document.createElement('p');p.setAttribute('role','alert');p.textContent=e.message;btn.after(p);}}));
+  }catch(e){box.textContent='โหลดรายงานไม่ได้: '+e.message;}
+ }
+ function openContact(report,legacy=false){
+  const dialog=document.createElement('dialog');dialog.className='item-details-dialog';dialog.innerHTML=`<form><h2>${legacy?'แชร์รายงานและเพิ่มช่องทางติดต่อ':'แก้ช่องทางติดต่อ'}</h2><p>${esc(report.itemName)}</p><label>ช่องทาง<select name="contactMethod"><option value="line">LINE ID</option><option value="phone">เบอร์โทร</option><option value="email">อีเมล</option></select></label><label>ข้อมูลติดต่อ<input name="contactValue" required maxlength="254" value="${esc(report.contactValue)}"></label><label><input type="checkbox" name="contactConsent" required> ${legacy?'ฉันเป็นผู้แจ้งรายงานนี้ และยอมรับให้สมาชิกเว็บเห็นรูป รายละเอียด หมุด และช่องทางติดต่อ':'ยอมรับให้สมาชิกเว็บเห็นช่องทางติดต่อ'}</label><p role="alert" data-error></p><div class="form-actions"><button type="button" class="btn btn-light" data-cancel>ยกเลิก</button><button type="submit" class="btn btn-orange">${legacy?'แชร์รายงาน':'บันทึก'}</button></div></form>`;document.body.append(dialog);dialog.querySelector('select').value=report.contactMethod||'line';dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();
+  dialog.querySelector('form').addEventListener('submit',async e=>{e.preventDefault();const form=e.target,btn=form.querySelector('[type=submit]');btn.disabled=true;form.querySelector('[data-error]').textContent='';try{const data=Object.fromEntries(new FormData(form));data.contactConsent=!!form.elements.contactConsent.checked;
+   if(legacy){let device=localStorage.getItem('findme_report_device');if(!device){device=crypto.randomUUID();localStorage.setItem('findme_report_device',device);}const shared=await create({...report,...data,kind:report.kind||(report.status==='Submitted'?'found':'lost'),photo:await photo(report.photo),clientKey:device+'_'+report.id});try{const saved=JSON.parse(localStorage.getItem('kmitl_reports')||'[]'),old=saved.find(r=>String(r.id)===String(report.id));if(old){old.sharedReportId=shared.id;localStorage.setItem('kmitl_reports',JSON.stringify(saved));}}catch{}}
+   else await request('/'+report.id+'/contact',data);
+   if(legacy)document.querySelectorAll('[data-publish-old]').forEach(b=>{if(b.dataset.publishOld===String(report.id)){b.disabled=true;b.textContent='แชร์แล้ว — จัดการในรายงานบนเว็บ';}});
+   dialog.close();await ownReports();
+  }catch(e){form.querySelector('[data-error]').textContent=e.message;btn.disabled=false;}});
+ }
+ document.addEventListener('DOMContentLoaded',async()=>{await window.FindMeReportsReady;if(!window.FindMeUser)return;await ownReports();const host=document.getElementById('legacyContactReports');if(host){try{const local=JSON.parse(localStorage.getItem('kmitl_reports')||'[]');const remaining=Array.isArray(local)?local.filter(r=>r&&typeof r==='object'&&!r.sharedReportId&&r.status!=='Returned'):[];host.innerHTML=remaining.map(r=>`<p>${esc(r.itemName)} <button type="button" class="btn btn-light" data-publish-old="${esc(r.id)}">เพิ่มช่องทางติดต่อและแชร์รายงานนี้</button></p>`).join('');host.querySelectorAll('[data-publish-old]').forEach(btn=>btn.addEventListener('click',()=>openContact(remaining.find(r=>String(r.id)===btn.dataset.publishOld),true)));}catch{host.textContent='อ่านรายงานเก่าไม่ได้ ข้อมูลเดิมยังอยู่';}}});
+})();

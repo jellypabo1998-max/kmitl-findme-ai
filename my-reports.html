@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Reports — FindMe AI</title>
-<link rel="stylesheet" href="style.css?v=20261006-pin5">
+<link rel="stylesheet" href="style.css?v=20261007-contact1">
 <style>
 /* ===== ส่วนเสริมเฉพาะหน้านี้ (ใช้ตัวแปรสี/ฟอนต์จาก style.css) ===== */
 .mr-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
@@ -79,7 +79,7 @@ html{overflow-y:scroll}
   </div>
 </header>
 
-<main class="page-wrap container" id="view" aria-live="polite"></main>
+<main class="page-wrap container" id="view" aria-live="polite"><section class="section"><div class="kicker">SHARED REPORTS</div><h2>รายงานของฉันที่แชร์บนเว็บ</h2><p class="meta">สมาชิกเห็นรายงานและช่องทางติดต่อเพื่อนัดคืนของได้</p><div id="cloudMyReports" role="region" aria-label="รายงานที่แชร์บนเว็บ"><p>กำลังโหลดรายงาน…</p></div><div id="legacyContactReports"></div></section></main>
 
 <footer class="footer">
   <div class="container footer-row">
@@ -96,7 +96,7 @@ html{overflow-y:scroll}
 </div>
 <div class="mr-toast" id="toast" role="status"></div>
 
-<script src="app.js?v=20261007-real-only"></script>
+<script src="reports-client.js?v=20261007-contact1"></script><script src="app.js?v=20261007-contact1"></script>
 
 <script>
 (() => {
@@ -147,7 +147,7 @@ html{overflow-y:scroll}
     catch { toast('บันทึกไม่สำเร็จ พื้นที่เก็บข้อมูลอาจเต็ม'); return false; }
   }
   const isLost = r => r && typeof r === 'object' && reportKind(r) === 'lost';
-  const getLost = () => loadAll().filter(isLost);
+  const getLost = () => loadAll().filter(r => isLost(r) && !r.sharedReportId);
   const getOne = id => getLost().find(r => idEq(r.id, id)) || null;
   function patch(id, fields) {
     const all = loadAll(), r = all.find(x => x && idEq(x.id, id));
@@ -220,7 +220,7 @@ html{overflow-y:scroll}
     $('#view').innerHTML = `
       <div class="page-title">
         <div class="kicker">YOUR ACTIVITY</div>
-        <h1>My reports</h1>
+        <h1>รายงานเก่าบนเครื่องนี้</h1>
         <p>ติดตามสถานะรายการที่คุณแจ้งหาย ข้อมูลที่กรอกใน prototype จะเก็บไว้ในเบราว์เซอร์เครื่องนี้</p>
       </div>
       <div class="mr-tabs" role="group" aria-label="กรองตามสถานะ">

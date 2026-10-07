@@ -34,7 +34,7 @@ window.FindMeOpenItem = function(item) {
   const photo=safePhoto(item.photo), point=validCoordinates(item.latitude,item.longitude);
   dialog.innerHTML=`<div class="item-details-head"><span class="badge ${item.type==='Found'?'found':'lost'}">${item.type==='Found'?'Found':'Lost'}</span><button class="btn btn-light" type="button" data-close-item aria-label="ปิดรายละเอียด">✕</button></div>
     ${photo?`<img class="item-details-image" src="${escapeHTML(photo)}" alt="${escapeHTML(item.name||item.itemName||'รูปสิ่งของ')}">`:`<div class="item-details-placeholder">${getIcon(item.category)}</div>`}
-    <h2 id="itemDetailsTitle">${escapeHTML(item.name||item.itemName||'Untitled item')}</h2>
+    ${window.FindMeReports?.contactHTML(item)||''}<h2 id="itemDetailsTitle">${escapeHTML(item.name||item.itemName||'Untitled item')}</h2>
     <p class="meta">${escapeHTML(item.category||'Other')} • ${escapeHTML(item.location||'ไม่ระบุสถานที่')}</p>
     <p class="meta">${escapeHTML(item.time||[item.date,item.time].filter(Boolean).join(' ')||'')}</p>
     <p class="item-details-description">${escapeHTML(item.description||'ไม่มีรายละเอียดเพิ่มเติม')}</p>
@@ -64,7 +64,7 @@ function renderItems(
     document.getElementById(target);
   if (!el) return;
   el.innerHTML =
-    list.length ? list.map(card).join('') : '<p class="meta" role="status">ยังไม่มีรายงานที่ตรงกับการค้นหา รายงานที่แจ้งจะบันทึกไว้ในเบราว์เซอร์เครื่องนี้</p>';
+    list.length ? list.map(card).join('') : '<p class="meta" role="status">ยังไม่มีรายงานที่ตรงกับการค้นหา รายงานใหม่จะแชร์แก่สมาชิกเว็บ</p>';
 }
 /* =========================================
    SEARCH / BROWSE
@@ -171,33 +171,27 @@ function setupReportForm() {
     }
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true;
-    const saveAndRedirect = (photo = '') => {
+    const saveAndRedirect = async (photo = '') => {
       try {
-        // Parse before writing so malformed existing data is never overwritten.
-        const list = readReports();
-        const report = {
-          ...data, photo, id: Date.now(), kind: form.dataset.kind,
-          status: form.dataset.kind === 'lost' ? 'Searching' : 'Submitted'
-        };
-        localStorage.setItem('kmitl_reports', JSON.stringify([report, ...list]));
+        const report = await window.FindMeReports.create({...data,photo,kind:form.dataset.kind,
+          contactConsent:form.elements.contactConsent.checked,clientKey:form.dataset.clientKey||(form.dataset.clientKey=crypto.randomUUID())});
         window.FindMeNavigate('matches.html?report=' + encodeURIComponent(report.id));
       } catch (err) {
         button.disabled = false;
-        fail('บันทึกไม่สำเร็จ พื้นที่เก็บข้อมูลอาจเต็มหรือข้อมูลเดิมอ่านไม่ได้ ลองใช้รูปที่เล็กลง ข้อมูลเดิมยังอยู่');
+        fail(err.message || 'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
       }
     };
     if (photoFile) {
-      const reader = new FileReader();
-      reader.onload = () => saveAndRedirect(reader.result);
-      reader.onerror = () => { button.disabled = false; fail('อ่านรูปไม่สำเร็จ กรุณาเลือกรูปใหม่'); };
-      reader.readAsDataURL(photoFile);
+      window.FindMeReports.photo(photoFile).then(saveAndRedirect).catch(err=>{button.disabled=false;fail(err.message||'อ่านรูปไม่สำเร็จ');});
     } else saveAndRedirect();
   });
 }
 function readReports() {
-  const saved = JSON.parse(localStorage.getItem('kmitl_reports') || '[]');
-  if (!Array.isArray(saved)) throw new Error('Invalid reports');
-  return saved.filter(report => report && typeof report === 'object');
+  const shared = window.FindMeReports?.list() || [];
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem('kmitl_reports') || '[]'); if (!Array.isArray(saved)) throw new Error('Invalid reports'); }
+  catch (error) { if (shared.length) return shared; throw error; }
+  return [...shared, ...saved.filter(report => report && typeof report === 'object' && !report.sharedReportId)];
 }
 function reportKind(report) {
   // Support reports saved before the kind field was added.
@@ -413,6 +407,7 @@ function renderMatches() {
     if (summaryEl) summaryEl.textContent = 'กรุณาส่งรายงานก่อนดูรายการที่เกี่ยวข้อง';
     return;
   }
+  document.getElementById('submittedItemContent')?.insertAdjacentHTML('beforeend',window.FindMeReports?.contactHTML(report)||'');
   const point = validCoordinates(report.latitude, report.longitude);
   if (point) {
     const pin = document.createElement('a'); pin.className = 'text-link';
@@ -427,12 +422,12 @@ function renderMatches() {
   }
   if (summaryEl) summaryEl.innerHTML = `<div class="form-card" style="margin-bottom:20px">
     <h2>${candidates.length ? `พบ ${candidates.length} รายงานในหมวดเดียวกัน` : 'ยังไม่มีรายงานหมวดเดียวกัน'}</h2>
-    <p class="meta">รายการจากข้อมูลที่บันทึกในเบราว์เซอร์เครื่องนี้ กรุณาตรวจรูป รายละเอียด และสถานที่ด้วยตัวเอง</p></div>`;
+    <p class="meta">รายงานที่แชร์บนเว็บและรายงานเก่าบนเครื่องนี้ กรุณาตรวจรูป รายละเอียด และสถานที่ด้วยตัวเอง</p></div>`;
   listEl.innerHTML = candidates.map(({item}) => `<article class="match-card">
     <div class="match-photo">${safePhoto(item.photo) ? `<img src="${escapeHTML(safePhoto(item.photo))}" alt="${escapeHTML(item.name)}" style="width:100%;height:100%;object-fit:contain">` : getIcon(item.category)}</div>
     <div><div class="kicker">SAVED REPORT</div><h3>${escapeHTML(item.name)}</h3>
     <p>${escapeHTML(item.category)} • ${escapeHTML(item.location)} • ${escapeHTML(item.time)}</p>
-    <p>${escapeHTML(item.description || '')}</p></div>
+    <p>${escapeHTML(item.description || '')}</p>${window.FindMeReports?.contactHTML(item)||''}</div>
     <div><a class="btn btn-light" href="${reportLink(item)}" data-item-details="${escapeHTML(item.id)}">ดูรายละเอียด</a></div>
     </article>`).join('');
 }
@@ -608,7 +603,7 @@ function setupReportSteps() {
       const n = Number(section.dataset.step);
       if (n > last) continue;
       for (const input of section.querySelectorAll('input:not([type="file"]), textarea, select')) {
-        input.setCustomValidity(input.required && !input.value.trim() ? 'กรุณากรอกข้อมูลนี้' : '');
+        input.setCustomValidity(input.required && input.type !== 'checkbox' && !input.value.trim() ? 'กรุณากรอกข้อมูลนี้' : '');
         if (!input.checkValidity()) {
           showStep(n);
           input.reportValidity();
@@ -657,7 +652,7 @@ function setupReportSteps() {
     const value = name => form.elements[name]?.value || '-';
     const photo = form.querySelector('.upload-preview img');
     const image = photo && safePhoto(photo.src) ? `<img class="review-image" src="${escapeHTML(photo.src)}" alt="รูปสำหรับตรวจทานรายงาน">` : '<span class="meta">No photo selected</span>';
-    const rows = [['Item name','itemName'],['Category','category'],['Description','description'],[form.dataset.kind === 'found' ? 'Date found' : 'Date lost','date'],['Approx. time','time'],['Location','location']];
+    const rows = [['Item name','itemName'],['Category','category'],['Description','description'],[form.dataset.kind === 'found' ? 'Date found' : 'Date lost','date'],['Approx. time','time'],['Location','location'],['Contact method','contactMethod'],['Contact','contactValue']];
     review.innerHTML = rows.map(([label,name]) => `<div class="review-row"><span class="review-label">${label}</span><span class="review-value">${escapeHTML(value(name))}</span></div>`).join('')
       + `<div class="review-row"><span class="review-label">Coordinates</span><span class="review-value">${escapeHTML(value('latitude'))}, ${escapeHTML(value('longitude'))}</span></div>`
       + `<div class="review-row"><span class="review-label">Photo</span><span class="review-value">${image}</span></div>`;
@@ -672,6 +667,7 @@ document.addEventListener(
   async () => {
     await window.FindMeAuthReady;
     if (!window.FindMeUser) return;
+    await window.FindMeReportsReady;
     setupAuth();
     setupReportSteps(); 
     renderItems(
