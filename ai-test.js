@@ -1,4 +1,4 @@
-import {categories,scoreTrials,exportTrialsCsv} from './ai-evaluation.js';
+import {categories,scoreTrials,exportTrialsCsv} from './ai-evaluation.js?v=20261007-nine';
 const $=id=>document.getElementById(id);
 const rows=$('trialRows'), start=$('startTest'), reset=$('resetTest'), download=$('downloadResults'), status=$('testStatus');
 let trials=[],running=false,locked=false;
