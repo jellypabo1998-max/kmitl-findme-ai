@@ -5,7 +5,134 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Report a found item — FindMe AI</title>
 <link rel="stylesheet" href="style.css?v=20261006-pin5">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""><script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261006-home2"></script></head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""><script src="auth-config.js?v=20261006-pin4"></script><script src="auth.js?v=20261006-home2"></script><style>
+
+/* ===== STEP NAV ===== */
+
+.progress {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.progress-step {
+  border: none;
+  border-radius: 16px;
+  padding: 16px 10px;
+  background: #eeece9;
+  color: #777;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.progress-step:hover {
+  transform: translateY(-1px);
+}
+
+.progress-step.active {
+  background: #111;
+  color: white;
+}
+
+.progress-step.completed {
+  background: #e9e7e4;
+  color: #333;
+}
+
+
+/* ===== STEP CONTENT ===== */
+
+.form-step {
+  display: none;
+}
+
+.form-step.active {
+  display: block;
+}
+
+
+/* ===== STEP BUTTONS ===== */
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.step-actions-right {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+
+/* ===== REVIEW ===== */
+
+.review-box {
+  background: #f5f4f1;
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.review-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.review-row:last-child {
+  border-bottom: none;
+}
+
+.review-label {
+  font-weight: 700;
+}
+
+.review-value {
+  text-align: right;
+  color: #666;
+}
+
+.review-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-top: 10px;
+}
+
+
+/* ===== MOBILE ===== */
+
+@media (max-width: 700px) {
+
+  .progress {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .progress-step {
+    font-size: 14px;
+  }
+
+  .review-row {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .review-value {
+    text-align: left;
+  }
+
+}
+
+</style>
+</head>
 
 <body>
 
@@ -51,78 +178,180 @@
 
   <div class="form-layout">
 
-    <form class="form-card" id="reportForm" data-report-form data-kind="found">
+    <form
+      class="form-card"
+      data-report-form
+      data-kind="found"
+    >
 
-      <div class="progress">
-        <span class="active">1. Details</span>
-        <span>2. Photo</span>
-        <span>3. Location</span>
-        <span>4. Review</span>
+
+      <!-- =========================
+           STEP NAVIGATION
+      ========================== -->
+
+      <input type="hidden" name="latitude"><input type="hidden" name="longitude">
+<div class="progress">
+
+        <button
+          type="button"
+          class="progress-step active"
+          data-step-button="1"
+        >
+          1. Details
+        </button>
+
+        <button
+          type="button"
+          class="progress-step"
+          data-step-button="2"
+        >
+          2. Photo
+        </button>
+
+        <button
+          type="button"
+          class="progress-step"
+          data-step-button="3"
+        >
+          3. Location
+        </button>
+
+        <button
+          type="button"
+          class="progress-step"
+          data-step-button="4"
+        >
+          4. Review
+        </button>
+
       </div>
 
 
-      <input type="hidden" name="latitude"><input type="hidden" name="longitude"><div class="form-grid">
 
-        <!-- ITEM NAME -->
-        <div class="field">
+      <!-- =========================
+           STEP 1 : DETAILS
+      ========================== -->
 
-          <label for="found-itemName">Item name</label>
+      <section
+        class="form-step active"
+        data-step="1"
+      >
 
-          <input
-            name="itemName" id="found-itemName"
-            required
-            placeholder="e.g. iPhone 15 / House keys"
+        <div class="form-grid">
+
+
+          <div class="field">
+
+            <label for="found-itemName">
+              Item name
+            </label>
+
+            <input
+              name="itemName"
+              required
+              placeholder="e.g. iPhone 15 / House keys"
+             id="found-itemName">
+
+          </div>
+
+
+
+          <div class="field">
+
+            <label for="found-category">
+              Category
+            </label>
+
+            <select name="category" id="found-category">
+
+              <option>Keys</option>
+
+              <option>Wallet</option>
+
+              <option>Phone</option>
+
+              <option>Bag</option>
+
+              <option>Bottle</option>
+
+              <option>Glasses</option>
+
+              <option>Earphones</option><option>Umbrella</option><option>ID Card</option><option>Laptop</option><option>Other</option>
+
+            </select>
+
+          </div>
+
+
+
+          <div class="field full">
+
+            <label for="found-description">
+              Description
+            </label>
+
+            <textarea
+              name="description"
+              required
+              placeholder="สี ลักษณะ จำนวนชิ้น พวงกุญแจ เคส หรือจุดสังเกตที่เห็นได้..."
+             id="found-description"></textarea>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="step-actions">
+
+          <a
+            class="btn btn-light"
+            href="index.html"
           >
+            Cancel
+          </a>
+
+
+          <button
+            type="button"
+            class="btn btn-dark"
+            data-next="2"
+          >
+            Next: Photo →
+          </button>
 
         </div>
 
-
-        <!-- CATEGORY -->
-        <div class="field">
-
-          <label for="found-category">Category</label>
-
-          <select name="category" id="found-category">
-
-            <option>Keys</option>
-            <option>Wallet</option>
-            <option>Phone</option>
-            <option>Bag</option>
-            <option>Bottle</option>
-            <option>Glasses</option>
-            <option>Earphones</option><option>Umbrella</option><option>ID Card</option><option>Laptop</option><option>Other</option>
-
-          </select>
-
-        </div>
+      </section>
 
 
-        <!-- DESCRIPTION -->
+
+      <!-- =========================
+           STEP 2 : PHOTO
+      ========================== -->
+
+      <section
+        class="form-step"
+        data-step="2"
+      >
+
         <div class="field full">
 
-          <label for="found-description">Description</label>
+          <label>
+            Photo of found item
+          </label>
 
-          <textarea
-            name="description" id="found-description"
-            required
-            placeholder="สี ลักษณะ จำนวนชิ้น พวงกุญแจ เคส หรือจุดสังเกตที่เห็นได้..."
-          ></textarea>
-
-        </div>
-
-
-        <!-- PHOTO -->
-        <div class="field full">
-
-          <label>Photo</label>
 
           <div class="upload-box">
 
-            <b>Upload a photo</b>
+            <b>
+              Upload a photo
+            </b>
 
             <p class="meta">
-              JPG / PNG / WebP ไม่เกิน 2 MB — เลือกรูปเพื่อดู preview
+              JPG / PNG / WebP ไม่เกิน 2 MB — เลือกรูปของที่พบ
             </p>
+
 
             <label class="btn btn-light">
 
@@ -138,9 +367,13 @@
 
             </label>
 
-            <div class="upload-preview"></div>
+
+            <div
+              class="upload-preview"
+            ></div>
 <button type="button" class="btn btn-light" id="analyzeFound">🤖 วิเคราะห์หมวดด้วย AI</button>
 <div id="foundAiResult" role="status" aria-live="polite"></div>
+<p class="meta">AI แนะนำหมวดของรูป กรุณาตรวจสอบหมวดก่อนส่งรายงาน</p>
 <p class="meta"><a href="ai-test.html">ทดสอบโมเดล 10 รอบ และดูคะแนนรวม →</a></p>
 
           </div>
@@ -148,67 +381,167 @@
         </div>
 
 
-        <!-- DATE -->
-        <div class="field">
+        <div class="step-actions">
 
-          <label for="found-date">Date found</label>
-
-          <input
-            name="date" id="found-date"
-            type="date"
-            required
+          <button
+            type="button"
+            class="btn btn-light"
+            data-prev="1"
           >
+            ← Back
+          </button>
+
+
+          <button
+            type="button"
+            class="btn btn-dark"
+            data-next="3"
+          >
+            Next: Location →
+          </button>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =========================
+           STEP 3 : LOCATION
+      ========================== -->
+
+      <section
+        class="form-step"
+        data-step="3"
+      >
+
+        <div class="form-grid">
+
+
+          <div class="field">
+
+            <label for="found-date">
+              Date found
+            </label>
+
+            <input
+              name="date"
+              type="date"
+              required
+             id="found-date">
+
+          </div>
+
+
+
+          <div class="field">
+
+            <label for="found-time">
+              Approx. time
+            </label>
+
+            <input
+              name="time"
+              type="time"
+             id="found-time">
+
+          </div>
+
+
+
+          <div class="field full">
+
+            <label for="found-location">
+              Found location
+            </label>
+
+            <input
+              name="location"
+              required
+              placeholder="e.g. Faculty of Science, KMITL"
+             id="found-location">
+
+          </div>
+
 
         </div>
 
 
-        <!-- TIME -->
-        <div class="field">
+        <div class="step-actions">
 
-          <label for="found-time">Approx. time</label>
-
-          <input
-            name="time" id="found-time"
-            type="time"
+          <button
+            type="button"
+            class="btn btn-light"
+            data-prev="2"
           >
+            ← Back
+          </button>
+
+
+          <button
+            type="button"
+            class="btn btn-dark"
+            data-next="4"
+          >
+            Review report →
+          </button>
 
         </div>
 
-
-        <!-- LOCATION -->
-        <div class="field full">
-
-          <label for="found-location">Found location</label>
-
-          <input
-            name="location" id="found-location"
-            required
-            placeholder="e.g. Faculty of Science, KMITL"
-          >
-
-        </div>
-
-      </div>
+      </section>
 
 
-      <!-- BUTTONS -->
-      <div class="form-actions">
 
-        <a
-          class="btn btn-light"
-          href="index.html"
+      <!-- =========================
+           STEP 4 : REVIEW
+      ========================== -->
+
+      <section
+        class="form-step"
+        data-step="4"
+      >
+
+        <h2>
+          Review your report
+        </h2>
+
+        <p class="meta">
+          ตรวจสอบข้อมูลก่อนส่งให้ระบบ AI Matching
+        </p>
+
+
+        <div
+          class="review-box"
+          id="reviewBox"
         >
-          Cancel
-        </a>
 
-        <button
-          class="btn btn-dark"
-          type="submit"
-        >
-          Find possible matches →
-        </button>
+          <!-- JavaScript จะใส่ข้อมูลตรงนี้ -->
 
-      </div>
+        </div>
+
+
+        <div class="step-actions">
+
+          <button
+            type="button"
+            class="btn btn-light"
+            data-prev="3"
+          >
+            ← Back
+          </button>
+
+
+          <button
+            class="btn btn-dark"
+            type="submit"
+          >
+            Find possible matches →
+          </button>
+
+        </div>
+
+      </section>
+
 
     </form>
 
@@ -253,7 +586,7 @@
 </footer>
 
 
-<script src="app.js?v=20261006-home2"></script>
+<script src="app.js?v=20261007-grace1"></script>
 <script src="found-ai.js?v=20261007-rf1"></script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="map.js?v=20261006-pin4"></script></body>
