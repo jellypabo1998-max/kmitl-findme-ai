@@ -75,7 +75,7 @@ function setupBrowse() {
   const category = document.getElementById('categoryFilter');
   const locationFilter = document.getElementById('locationFilter');
   if (!search) return;
-  const items = allBrowseItems();
+  let items = allBrowseItems();
   search.value = new URLSearchParams(location.search).get('q') || '';
   if (locationFilter) {
     const locations = [...new Set(items.map(item => item.location).filter(Boolean))].sort();
@@ -94,6 +94,7 @@ function setupBrowse() {
     if (typeof updateOverviewMap === 'function') updateOverviewMap('browseMap', out);
   };
   [search, type, category, locationFilter].forEach(element => element?.addEventListener('input', run));
+  window.addEventListener('findme-reports-updated',()=>{items=allBrowseItems();run();});
   run();
 }
 /* =========================================

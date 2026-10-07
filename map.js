@@ -107,15 +107,15 @@ function updateOverviewMap(id, items) {
     const collapse=document.createElement('button'); collapse.type='button'; collapse.className='map-report-collapse'; collapse.textContent='ย่อรายละเอียด';
     const toggle=()=>{expanded.hidden=!expanded.hidden;title.setAttribute('aria-expanded',String(!expanded.hidden));hint.hidden=!expanded.hidden;marker?.getPopup().update();};
     title.addEventListener('click',toggle);collapse.addEventListener('click',toggle);
-    expanded.append(category,description,date,collapse);
+    expanded.append(category,description,date);if(window.FindMeReports){const contact=document.createElement('div');contact.innerHTML=window.FindMeReports.contactHTML(item);expanded.append(contact);}expanded.append(collapse);
     const link=document.createElement('a');link.className='map-report-external';link.href=googleMapsLink(point);link.target='_blank';link.rel='noopener noreferrer';link.textContent='เปิด Google Maps ↗';
-    popup.append(title,details,hint,expanded,link);
+    const view=document.createElement('button');view.type='button';view.className='btn btn-light';view.textContent='ดูรายละเอียด / ขอติดต่อ';view.addEventListener('click',()=>window.FindMeOpenItem?.(item));popup.append(title,details,hint,expanded,view,link);
     marker=L.circleMarker(point, {radius:9,color:'#fff',weight:2,fillColor:item.type==='Found'?'#f05a24':'#2563eb',fillOpacity:1}).bindPopup(popup,{minWidth:220,maxWidth:300,maxHeight:360}).addTo(state.markers);
   });
   if (pinned.length) state.map.fitBounds(state.markers.getBounds().pad(0.25), {maxZoom: 17});
   else state.map.setView(CAMPUS_CENTER, 16);
   const status = document.getElementById(id + 'Status');
-  if (status) status.textContent = pinned.length ? `${pinned.length} หมุดจากรายงานที่บันทึกในเบราว์เซอร์นี้ · แตะหมุดเพื่อดูรายละเอียด` : 'ยังไม่มีหมุดในรายการนี้ — แจ้งของหายหรือของที่พบพร้อมปักตำแหน่งเพื่อเริ่ม';
+  if (status) status.textContent = pinned.length ? `${pinned.length} หมุดจากรายงาน · แตะหมุดเพื่อดูรายละเอียด` : 'ยังไม่มีหมุดในรายการนี้ — แจ้งของหายหรือของที่พบพร้อมปักตำแหน่งเพื่อเริ่ม';
 }
 
 function setupOverviewMaps() {

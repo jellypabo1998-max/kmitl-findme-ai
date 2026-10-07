@@ -20,15 +20,24 @@ await reports.init();
 // Disposable test account checks actual database writes, hashes, sessions and revocation.
 if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
   const tag = randomBytes(8).toString('hex'), password = randomBytes(24).toString('hex');
-  let userId;
+  let userId,requesterId;
   try {
     const registered = await accounts.register({username:`test_${tag}`,email:`${tag}@example.invalid`,password});
     userId = registered.user.id;
     if ((await accounts.me(registered.token)).id !== userId) throw new Error('Session test failed');
     const testReport=await reports.create(registered.user,{itemName:'Database smoke item',description:'Synthetic smoke test',location:'KMITL',category:'Keys',kind:'found',date:'2026-10-07',latitude:13.727478,longitude:100.775952,contactMethod:'email',contactValue:registered.user.email,contactConsent:true});
     if(!(await reports.list(registered.user,true)).some(r=>r.id===testReport.id))throw new Error('Report persistence test failed');
-    if(!(await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id&&r.contactValue===registered.user.email&&r.isOwner===false))throw new Error('Shared report visibility test failed');
+    if(!(await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id&&!r.contactValue&&r.isOwner===false))throw new Error('Shared report visibility test failed');
     try{await reports.contact({id:'00000000-0000-0000-0000-000000000000',name:'other'},testReport.id,{contactMethod:'email',contactValue:'test@example.invalid',contactConsent:true});throw new Error('Report ownership failed');}catch(e){if(e.status!==404)throw e;}
+    const requester=await accounts.register({username:`claim_${tag}`,email:`claim_${tag}@example.invalid`,password});requesterId=requester.user.id;
+    await reports.claim(requester.user,testReport.id,{evidence:'Synthetic private identifying mark'});
+    const claim=(await reports.claims(registered.user)).find(c=>c.report_id===testReport.id);if(!claim)throw new Error('Claim persistence failed');
+    try{await reports.review(requester.user,claim.id,{status:'Approved'});throw new Error('Self approval accepted');}catch(e){if(e.status!==404)throw e;}
+    await reports.review(registered.user,claim.id,{status:'Approved'});
+    if(!(await reports.list(requester.user)).some(r=>r.id===testReport.id&&r.contactValue===registered.user.email))throw new Error('Approved contact unavailable');
+    await reports.review(registered.user,claim.id,{status:'Rejected'});
+    if((await reports.list(requester.user)).some(r=>r.id===testReport.id&&r.contactValue))throw new Error('Revoked contact remained visible');
+    console.log('Private claim smoke test passed: hidden contacts, owner approval, requester unlock, revocation');
     await reports.status(registered.user,testReport.id,'Returned');
     if((await reports.list({id:'00000000-0000-0000-0000-000000000000'})).some(r=>r.id===testReport.id))throw new Error('Returned report remained public');
     console.log('Report database smoke test passed: persistent report, owner-only edits, return status');
@@ -39,7 +48,7 @@ if (process.env.RUN_AUTH_SMOKE_TEST === 'true') {
     try { await accounts.me(signedIn.token); throw new Error('Revoked session accepted'); }
     catch(e) { if (e.status !== 401) throw e; }
     console.log('Auth database smoke test passed: signup, login, wrong password, persistent session, logout');
-  } finally { if (userId) await pool.query('DELETE FROM findme_users WHERE id=$1',[userId]); }
+  } finally { if(requesterId)await pool.query('DELETE FROM findme_users WHERE id=$1',[requesterId]);if (userId) await pool.query('DELETE FROM findme_users WHERE id=$1',[userId]); }
 }
 const root = dirname(fileURLToPath(import.meta.url));
 const files = new Set(['index.html','login.html','register.html','account.html','browse.html','my-reports.html','report-lost.html','report-found.html','matches.html','verify.html','style.css','app.js','map.js','auth.js','auth-config.js','found-ai.js','ai-test.html','ai-test.js','ai-evaluation.js','reports-client.js']);
@@ -69,6 +78,7 @@ const server = http.createServer(async (req,res) => {
     if(path==='/api/reports'||path.startsWith('/api/reports/')) {
       const user=await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
       if(path==='/api/reports'&&req.method==='GET')return reply(200,{reports:await reports.list(user,new URL(req.url,'http://localhost').searchParams.get('mine')==='1')});
+      if(path==='/api/reports/claims'&&req.method==='GET')return reply(200,{claims:await reports.claims(user)});
       if(req.method!=='POST')return reply(404,{error:'Not found'});
       const now=Date.now();let rate=reportLimits.get(user.id);if(!rate||rate.until<now){rate={count:0,until:now+3600000};reportLimits.set(user.id,rate);}if(++rate.count>120)throw new AuthError(429,'มีคำขอแก้รายงานมากเกินไป กรุณาลองภายหลัง');
       if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new AuthError(400,'ข้อมูลไม่ถูกต้อง');
@@ -76,6 +86,8 @@ const server = http.createServer(async (req,res) => {
       let data;try{data=JSON.parse(Buffer.concat(chunks).toString());}catch{throw new AuthError(400,'ข้อมูลไม่ถูกต้อง');}
       if(!data||typeof data!=='object'||Array.isArray(data))throw new AuthError(400,'ข้อมูลไม่ถูกต้อง');
       if(path==='/api/reports')return reply(201,{report:await reports.create(user,data)});
+      const review=path.match(/^\/api\/reports\/claims\/([0-9a-f-]{36})\/review$/i);if(review)return reply(200,await reports.review(user,review[1],data));
+      const claim=path.match(/^\/api\/reports\/([0-9a-f-]{36})\/claim$/i);if(claim)return reply(201,await reports.claim(user,claim[1],data));
       const match=path.match(/^\/api\/reports\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(contact|status)$/i);
       if(!match)return reply(404,{error:'Not found'});
       return reply(200,{report:await(match[2]==='contact'?reports.contact(user,match[1],data):reports.status(user,match[1],data.status))});
