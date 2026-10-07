@@ -1,4 +1,4 @@
-export const categories=['Keys','Wallet','Phone','Bag','Bottle','Glasses','Earphones','Umbrella','ID Card','Laptop','Other'];
+export const categories=['Keys','Wallet','Phone','Bag','Bottle','Glasses','ID Card','Laptop','Other'];
 export function scoreTrials(trials){
   const completed=trials.filter(t=>t.status==='done'&&categories.includes(t.expected)&&categories.includes(t.prediction?.category));
   const correct=completed.filter(t=>t.expected===t.prediction.category).length;

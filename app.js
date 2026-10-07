@@ -879,14 +879,6 @@ function renderReports() {
         'Library',
       status:
         'Potential Match'
-    },
-    {
-      itemName:
-        'Umbrella',
-      location:
-        'Engineering Building',
-      status:
-        'Returned'
     }
   ];
   const rows =

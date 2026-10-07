@@ -1,5 +1,5 @@
 import { AuthError } from './auth-service.mjs';
-const categoryMap={Key:'Keys',Keys:'Keys',Bag:'Bag',Bottle:'Bottle',Card:'ID Card',Earphones:'Earphones',Glasses:'Glasses',Laptop:'Laptop',Phone:'Phone',Umbrella:'Umbrella',Wallet:'Wallet',Other:'Other',placeholder:'Other'};
+const categoryMap={Key:'Keys',Keys:'Keys',Bag:'Bag',Bottle:'Bottle',Card:'ID Card',Glasses:'Glasses',Laptop:'Laptop',Phone:'Phone',Wallet:'Wallet',Other:'Other',placeholder:'Other'};
 export async function classifyFoundPhoto(image,{key=process.env.ROBOFLOW_API_KEY,fetcher=fetch}={}){
   if(!key)throw new AuthError(503,'AI ยังรอตั้งค่าเชื่อมต่อบนเซิร์ฟเวอร์');
   if(typeof image!=='string'||image.length>2750000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(image))throw new AuthError(400,'กรุณาเลือกรูปที่ถูกต้อง');
