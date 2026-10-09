@@ -1,6 +1,8 @@
 /* UI translations only. User report/chat contents are never translated. */
 (()=>{
 const pairs=[
+["Upload images up to 10 MB each (JPG / PNG / WebP)","อัปโหลดรูปได้สูงสุด 10 MB ต่อรูป (JPG / PNG / WebP)"],
+
 ["AI classifies photos on your device without credits. First use downloads about 24 MB.", "AI วิเคราะห์บนอุปกรณ์ ไม่ใช้เครดิต ครั้งแรกโหลด AI ประมาณ 24 MB"],
 ["AI analyzes on your device. Photos are not sent to Roboflow and no credits are used. First use downloads about 24 MB. Test photos are not saved as reports.", "AI วิเคราะห์บนอุปกรณ์ของคุณ ไม่ส่งรูปไป Roboflow และไม่ใช้เครดิต ครั้งแรกต้องดาวน์โหลด AI ประมาณ 24 MB รูปชุดทดสอบจะไม่ถูกบันทึกเป็นประกาศ"],
 ["A new browser model was trained using the team dataset. It correctly classified 134/138 held-out images (97.1%). AI suggests item categories; it does not prove ownership or that two items are the same. Test with new photos.", "ใช้ชุดรูปเดิมของทีมเทรนโมเดลใหม่สำหรับเบราว์เซอร์ ผลชุดทดสอบเดิมถูก 134/138 รูป (97.1%) AI แนะนำหมวดสิ่งของ ไม่ได้ยืนยันเจ้าของหรือว่าเป็นของชิ้นเดียวกัน โปรดทดสอบด้วยรูปถ่ายใหม่"],
