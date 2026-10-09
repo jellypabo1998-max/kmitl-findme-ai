@@ -5,7 +5,7 @@ import {classifyPhoto} from './browser-ai.js?v=20261009-local1';
  input.addEventListener('change',()=>{generation++;output.replaceChildren();button.disabled=false;});
  button.addEventListener('click',async()=>{
   const file=input.files[0];if(!file){output.textContent='เลือกรูปของที่พบก่อนจ้า';return;}
-  if(!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size>2*1024*1024){output.textContent='ใช้รูป JPG / PNG / WebP ไม่เกิน 2 MB';return;}
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size>10 * 1024 * 1024){output.textContent='ใช้รูป JPG / PNG / WebP ไม่เกิน 10 MB';return;}
   const current=generation;button.disabled=true;output.textContent='กำลังวิเคราะห์รูป…';
   try{
    const data=await classifyPhoto(file);if(current!==generation)return;

@@ -168,8 +168,8 @@ function setupReportForm() {
     if (!point) { fail('กรุณาปักหมุดบนแผนที่ หรือกรอกพิกัดให้ถูกต้องก่อนส่งรายงาน'); return; }
     data.latitude = point.lat; data.longitude = point.lng;
     const photoFile = form.querySelector('[data-upload]')?.files?.[0];
-    if (photoFile && (!/^image\/(jpeg|png|webp)$/.test(photoFile.type) || photoFile.size > 2 * 1024 * 1024)) {
-      fail('กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB'); return;
+    if (photoFile && (!/^image\/(jpeg|png|webp)$/.test(photoFile.type) || photoFile.size > 10 * 1024 * 1024)) {
+      fail('กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 10 MB'); return;
     }
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true;
@@ -614,9 +614,9 @@ function setupReportSteps() {
       }
       if (n === 2) {
         const file = form.querySelector('[data-upload]')?.files?.[0];
-        if (file && (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2 * 1024 * 1024)) {
+        if (file && (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024)) {
           showStep(2);
-          message.textContent = 'กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB';
+          message.textContent = 'กรุณาใช้รูป JPG, PNG หรือ WebP ขนาดไม่เกิน 10 MB';
           message.hidden = false;
           return false;
         }

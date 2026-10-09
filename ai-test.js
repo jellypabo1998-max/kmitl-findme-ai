@@ -23,7 +23,7 @@ function makeRows(){
   input.addEventListener('change',()=>{
    if(locked)return;if(trial.preview)URL.revokeObjectURL(trial.preview);trial.file=null;img.hidden=true;filename.textContent='';
    const file=input.files[0];if(!file)return;
-   if(!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size>2*1024*1024){input.value='';status.textContent='รอบ '+(i+1)+': ใช้รูป JPG / PNG / WebP ไม่เกิน 2 MB';return;}
+   if(!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size>10 * 1024 * 1024){input.value='';status.textContent='รอบ '+(i+1)+': ใช้รูป JPG / PNG / WebP ไม่เกิน 10 MB';return;}
    trial.file=file;trial.filename=file.name;trial.preview=URL.createObjectURL(file);img.src=trial.preview;img.hidden=false;filename.textContent=file.name;
   });
  }

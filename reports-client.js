@@ -10,7 +10,7 @@
  async function photo(file){
   if(!file)return '';let blob=file;
   if(typeof file==='string'){if(!/^data:image\/(jpeg|png|webp);base64,/.test(file))throw new Error('รูปไม่ถูกต้อง');blob=await(await fetch(file)).blob();}
-  if(blob.size>2*1024*1024)throw new Error('รูปใหญ่เกิน 2 MB');
+  if(blob.size>10 * 1024 * 1024)throw new Error('รูปใหญ่เกิน 10 MB');
   const image=await createImageBitmap(blob), ratio=Math.min(1,640/Math.max(image.width,image.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*ratio));canvas.height=Math.max(1,Math.round(image.height*ratio));const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);image.close();const result=canvas.toDataURL('image/jpeg',.72);if(result.length>550000)throw new Error('รูปยังใหญ่เกินไป กรุณาเลือกรูปเล็กลง');return result;
  }
  async function create(data){const result=await request('',data);cache=[result.report,...cache.filter(r=>r.id!==result.report.id)];return result.report;}
