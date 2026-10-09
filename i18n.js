@@ -5,10 +5,12 @@ const pairs=[["Home", "หน้าหลัก"], ["Report Lost", "แจ้ง
 pairs.push(["Answer questions / open case and chat","ตอบคำถาม / เปิดเคสและแชท"],["Manage cases in My Reports","จัดการเคสใน My Reports"],["Contact and confirm receipt in the case chat without exchanging contact details","ติดต่อและยืนยันรับคืนผ่านแชทในเคส ไม่ต้องแลกข้อมูลติดต่อ"],["View closed case","ดูเคสที่ปิดแล้ว"],["I found it — verify in a case","I found it — ยืนยันผ่านเคส"],["Reviewing answers","กำลังตรวจสอบ"],["Delete","ลบ"],["Details","รายละเอียด"],["Still missing","ยังไม่เจอ"],["Share and use in-app chat","แชร์และใช้แชทในเว็บ"]);
 const english=new Map(), thai=new Map();
 for(const [en,th] of pairs){english.set(en,[en,th]);if(!thai.has(th))thai.set(th,[en,th]);}
+// Status wording used by My Reports differs from the Browse type label.
+for(const [en,th] of [['Found','พบแล้ว'],['Possible match','อาจตรงกัน'],['Matching report available','มีรายการที่ตรง'],['Locked','ถูกล็อก'],['View result','ดูผล'],['Item received','ได้รับของคืนเรียบร้อยแล้ว'],['Waiting for the owner to open a verification request and chat','รอเจ้าของเปิดคำขอยืนยันและแชท']])thai.set(th,[en,th]);
 let language='th';try{language=localStorage.getItem('findme-language')==='en'?'en':'th';}catch{}
 const normalize=s=>String(s).replace(/\s+/g,' ').trim();
 const t=s=>{const key=normalize(s), pair=english.get(key)||thai.get(key);return pair?pair[language==='th'?1:0]:s;};
-const protectedSelector='script,style,code,pre,[data-no-i18n],.case-message,.case-evidence,.case-dialog [data-body]>p,.item-card .meta,.user-info,#userMenuBtn,#accountName,#accountEmail,#itemDetailsTitle,.item-details-description,.item-top h3,.mr-card h3,.mr-card p:not(.mr-note),.match-card h3,.match-card p,.report-card h3,.report-card p,.case-summary h3,[data-info] h3,.review-value,#submittedItemContent h2,#submittedItemContent p';
+const protectedSelector='script,style,code,pre,[data-no-i18n],.case-message,.case-evidence,.case-dialog [data-body]>p,.item-card .meta,.user-info,#userMenuBtn,#accountName,#accountEmail,#itemDetailsTitle,.item-details-description,.item-top h3,.mr-card h3,.match-card h3,.match-card p,.report-card h3,.report-card>p,.mr-body p,.case-summary h3,[data-info] h3,.review-value,#submittedItemContent h2,#submittedItemContent p';
 const originals=new WeakMap(), attributeOriginals=new WeakMap();
 function translateNode(node){
  const parent=node.parentElement;if(!parent||parent.closest(protectedSelector))return;
