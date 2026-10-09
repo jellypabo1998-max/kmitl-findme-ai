@@ -84,7 +84,6 @@ const origins = new Set((process.env.ALLOWED_ORIGINS || 'https://jellypabo1998-m
 const limits = new Map();
 let activeAuth = 0;
 let activeVision=0;
-const visionLimits=new Map();
 const reportLimits=new Map();
 const server = http.createServer(async (req,res) => {
   const origin = req.headers.origin;
@@ -125,14 +124,14 @@ const server = http.createServer(async (req,res) => {
       return reply(200,{report:await(match[2]==='contact'?reports.contact(user,match[1],data):reports.status(user,match[1],data.status))});
     }
     if(path==='/api/vision/classify' && req.method==='POST') {
-      const user=await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
-      const now=Date.now();let rate=visionLimits.get(user.id);
-      if(!rate||rate.until<now){rate={count:0,until:now+3600000};visionLimits.set(user.id,rate);}
-      if(rate.count>=20||activeVision>=2)throw new AuthError(429,'วิเคราะห์ครบโควตาชั่วคราว กรุณาลองภายหลัง');
+      await accounts.me((req.headers.authorization||'').replace(/^Bearer /,''));
       if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new AuthError(400,'Invalid request');
       let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>2800000)throw new AuthError(413,'รูปใหญ่เกินไป');chunks.push(chunk);}
       let data;try{data=JSON.parse(Buffer.concat(chunks).toString());}catch{throw new AuthError(400,'Invalid request');}
-      rate.count++;activeVision++;
+      // No per-account hourly quota. Check capacity after reading the body so
+      // concurrent uploads cannot all pass the check before claiming a slot.
+      if(activeVision>=2){res.setHeader('Retry-After','5');throw new AuthError(503,'AI busy — ระบบกำลังวิเคราะห์รูปอื่นอยู่ กรุณารอสักครู่แล้วลองใหม่');}
+      activeVision++;
       try{return reply(200,await classifyFoundPhoto(data?.image));}finally{activeVision--;}
     }
     if (path.startsWith('/api/auth/')) {
