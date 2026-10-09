@@ -80,11 +80,11 @@ function setupBrowse() {
   search.value = new URLSearchParams(location.search).get('q') || '';
   if (locationFilter) {
     const locations = [...new Set(items.map(item => item.location).filter(Boolean))].sort();
-    locations.forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; locationFilter.append(option); });
+    locations.forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; option.setAttribute('data-no-i18n',''); locationFilter.append(option); });
   }
   const run = () => {
     const q = search.value.trim().toLowerCase();
-    const out = items.filter(item => (!q || `${item.name} ${item.category} ${item.location}`.toLowerCase().includes(q))
+    const out = items.filter(item => (!q || `${item.name} ${item.category} ${window.FindMeI18n?.t(item.category)||''} ${item.location}`.toLowerCase().includes(q))
       && (!type?.value || item.type === type.value)
       && (!category?.value || item.category === category.value)
       && (!locationFilter?.value || item.location === locationFilter.value));
