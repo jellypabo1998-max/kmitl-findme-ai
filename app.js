@@ -390,6 +390,36 @@ function renderSubmittedItem(
 /* =========================================
    RENDER AI MATCHES
 ========================================= */
+// คะแนนคัดกรองเบื้องต้นจากข้อมูลรายงาน ไม่ใช่ความมั่นใจของ AI หรือภาพถ่าย
+function textSimilarity(a, b) {
+  const clean = value => String(value || '').toLocaleLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const left = clean(a), right = clean(b);
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  const tokens = value => new Set(value.split(/\s+/).filter(word => word.length > 1));
+  const x = tokens(left), y = tokens(right);
+  const overlap = [...x].filter(word => y.has(word)).length;
+  const union = new Set([...x, ...y]).size;
+  return Math.max(union ? overlap / union : 0, left.includes(right) || right.includes(left) ? 0.6 : 0);
+}
+function locationSimilarity(a, b) {
+  const p = validCoordinates(a.latitude, a.longitude);
+  const q = validCoordinates(b.latitude, b.longitude);
+  if (p && q) {
+    const rad = n => n * Math.PI / 180;
+    const dLat = rad(q.lat - p.lat), dLng = rad(q.lng - p.lng);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(p.lat)) * Math.cos(rad(q.lat)) * Math.sin(dLng / 2) ** 2;
+    const meters = 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+    return Math.max(0, 1 - meters / 2000);
+  }
+  return textSimilarity(a.location, b.location);
+}
+function matchBreakdown(a, b) {
+  const category = String(a.category || '').trim().toLowerCase() === String(b.category || '').trim().toLowerCase() ? 100 : 0;
+  const location = Math.round(locationSimilarity(a, b) * 100);
+  const description = Math.round(textSimilarity(`${a.itemName || ''} ${a.description || ''}`, `${b.itemName || ''} ${b.description || ''}`) * 100);
+  return { category, location, description, total: Math.round(category * .4 + location * .3 + description * .3) };
+}
 function renderMatches() {
   const listEl = document.getElementById('matchList');
   const summaryEl = document.getElementById('matchSummary');
@@ -425,11 +455,18 @@ function renderMatches() {
   if (summaryEl) summaryEl.innerHTML = `<div class="form-card" style="margin-bottom:20px">
     <h2>${candidates.length ? `พบ ${candidates.length} รายงานในหมวดเดียวกัน` : 'ยังไม่มีรายงานหมวดเดียวกัน'}</h2>
     <p class="meta">รายงานที่แชร์บนเว็บและรายงานเก่าบนเครื่องนี้ กรุณาตรวจรูป รายละเอียด และสถานที่ด้วยตัวเอง</p></div>`;
-  listEl.innerHTML = candidates.map(({item}) => `<article class="match-card">
+  const ranked = candidates.map(({item}) => ({item, score: matchBreakdown(report, item)}))
+    .sort((a, b) => b.score.total - a.score.total);
+  listEl.innerHTML = ranked.map(({item, score}) => `<article class="match-card">
     <div class="match-photo">${safePhoto(item.photo) ? `<img src="${escapeHTML(safePhoto(item.photo))}" alt="${escapeHTML(item.name)}" style="width:100%;height:100%;object-fit:contain">` : getIcon(item.category)}</div>
-    <div><div class="kicker">SAVED REPORT</div><h3>${escapeHTML(item.name)}</h3>
+    <div style="min-width:0;flex:1"><div class="kicker">POSSIBLE MATCH</div><h3>${escapeHTML(item.name)}</h3>
     <p>${escapeHTML(item.category)} • ${escapeHTML(item.location)} • ${escapeHTML(item.time)}</p>
-    <p>${escapeHTML(item.description || '')}</p>${window.FindMeReports?.contactHTML(item)||''}</div>
+    <p>${escapeHTML(item.description || '')}</p>
+    <div style="margin:12px 0"><strong style="font-size:26px">${score.total}%</strong> <span class="meta">คะแนนความสอดคล้องของข้อมูล</span>
+      <div style="height:9px;background:#e9e7e4;border-radius:99px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${score.total}%;background:#ef652f;border-radius:99px"></div></div>
+      <p class="meta" style="margin-top:8px">ประเภท ${score.category}% · สถานที่ ${score.location}% · รายละเอียด ${score.description}%</p>
+      <p class="meta">คะแนนจากข้อมูลรายงาน ไม่ใช่คะแนนความเหมือนของภาพหรือความมั่นใจของ AI</p>
+    </div>${window.FindMeReports?.contactHTML(item)||''}</div>
     <div><a class="btn btn-light" href="${reportLink(item)}" data-item-details="${escapeHTML(item.id)}">ดูรายละเอียด</a></div>
     </article>`).join('');
 }
