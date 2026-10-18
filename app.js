@@ -222,6 +222,7 @@ function getLatestReport() {
 /* =========================================
    ICON
 ========================================= */
+
 function getIcon(category) {
   const icons = {
     Keys: '🔑',
@@ -229,13 +230,14 @@ function getIcon(category) {
     Phone: '📱',
     Bag: '👜',
     Bottle: '🧴',
-    Glasses: '👓'
+    Glasses: '👓',
+    Laptop: '💻',
+    Calculator: '🧮',
+    Watch: '⌚'
   };
-  return (
-    icons[category] ||
-    '📦'
-  );
+  return icons[category] || '📦';
 }
+
 /* =========================================
    SECURITY / HTML ESCAPE
 ========================================= */
