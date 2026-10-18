@@ -205,11 +205,18 @@ function reportLink(report) {
 function safePhoto(photo) {
   return typeof photo === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(photo) ? photo : '';
 }
+function matchCategory(value) {
+  const category=String(value||'').trim().toLowerCase();
+  return category==='key'?'keys':category;
+}
 function getMatchCandidates(report, saved = readReports()) {
+  const category=matchCategory(report.category);
+  if(!['keys','wallet','phone','bag','bottle','glasses','laptop','other'].includes(category))return [];
   const targetType = reportKind(report) === 'found' ? 'Lost' : 'Found';
   return saved.filter(r => String(r.id) !== String(report.id) && r.status !== 'Returned'
+    && !r.deletedAt && !r.deleted_at && !r.isDeleted
     && (reportKind(r) === 'found' ? 'Found' : 'Lost') === targetType
-    && String(r.category || '').trim().toLowerCase() === String(report.category || '').trim().toLowerCase())
+    && matchCategory(r.category) === category)
     .map(r => ({item: {...r, name: r.itemName, type: targetType,
       time: [r.date, r.time].filter(Boolean).join(' '), icon: getIcon(r.category)}}));
 }
@@ -392,33 +399,42 @@ function renderSubmittedItem(
 ========================================= */
 // คะแนนคัดกรองเบื้องต้นจากข้อมูลรายงาน ไม่ใช่ความมั่นใจของ AI หรือภาพถ่าย
 function textSimilarity(a, b) {
-  const clean = value => String(value || '').toLocaleLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-  const left = clean(a), right = clean(b);
-  if (!left || !right) return 0;
-  if (left === right) return 1;
-  const tokens = value => new Set(value.split(/\s+/).filter(word => word.length > 1));
-  const x = tokens(left), y = tokens(right);
-  const overlap = [...x].filter(word => y.has(word)).length;
-  const union = new Set([...x, ...y]).size;
-  return Math.max(union ? overlap / union : 0, left.includes(right) || right.includes(left) ? 0.6 : 0);
+  const clean=value=>String(value||'').normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+  const left=clean(a),right=clean(b);
+  if(!left||!right)return 0;
+  if(left===right)return 1;
+  const tokens=value=>new Set(value.split(/\s+/).flatMap(word=>{
+    if(!/[\u0e00-\u0e7f]/.test(word))return word.length>1?[word]:[];
+    return Array.from({length:Math.max(0,word.length-1)},(_,i)=>word.slice(i,i+2));
+  }));
+  const x=tokens(left),y=tokens(right),union=new Set([...x,...y]).size;
+  return union?[...x].filter(word=>y.has(word)).length/union:0;
 }
-function locationSimilarity(a, b) {
-  const p = validCoordinates(a.latitude, a.longitude);
-  const q = validCoordinates(b.latitude, b.longitude);
-  if (p && q) {
-    const rad = n => n * Math.PI / 180;
-    const dLat = rad(q.lat - p.lat), dLng = rad(q.lng - p.lng);
-    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(p.lat)) * Math.cos(rad(q.lat)) * Math.sin(dLng / 2) ** 2;
-    const meters = 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
-    return Math.max(0, 1 - meters / 2000);
+function locationSimilarity(a,b) {
+  const p=validCoordinates(a.latitude,a.longitude),q=validCoordinates(b.latitude,b.longitude);
+  if(p&&q){
+    const rad=n=>n*Math.PI/180,dLat=rad(q.lat-p.lat),dLng=rad(q.lng-p.lng);
+    const h=Math.sin(dLat/2)**2+Math.cos(rad(p.lat))*Math.cos(rad(q.lat))*Math.sin(dLng/2)**2;
+    return Math.max(0,1-6371000*2*Math.asin(Math.min(1,Math.sqrt(h)))/2000);
   }
-  return textSimilarity(a.location, b.location);
+  return textSimilarity(a.location,b.location);
 }
-function matchBreakdown(a, b) {
-  const category = String(a.category || '').trim().toLowerCase() === String(b.category || '').trim().toLowerCase() ? 100 : 0;
-  const location = Math.round(locationSimilarity(a, b) * 100);
-  const description = Math.round(textSimilarity(`${a.itemName || ''} ${a.description || ''}`, `${b.itemName || ''} ${b.description || ''}`) * 100);
-  return { category, location, description, total: Math.round(category * .4 + location * .3 + description * .3) };
+function reportDay(r){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date||''))return null;
+  const day=Date.parse(r.date+'T00:00:00Z');
+  return Number.isFinite(day)&&new Date(day).toISOString().slice(0,10)===r.date?day/86400000:null;
+}
+function matchBreakdown(a,b){
+  const category=matchCategory(a.category)===matchCategory(b.category)?100:0;
+  const hasLocation=!!(validCoordinates(a.latitude,a.longitude)&&validCoordinates(b.latitude,b.longitude))||!!(String(a.location||'').trim()&&String(b.location||'').trim());
+  const hasDescription=!!(String(a.description||a.itemName||'').trim()&&String(b.description||b.itemName||b.name||'').trim());
+  const location=hasLocation?Math.round(locationSimilarity(a,b)*100):null;
+  const description=hasDescription?Math.round(textSimilarity(`${a.itemName||a.name||''} ${a.description||''}`,`${b.itemName||b.name||''} ${b.description||''}`)*100):null;
+  const lost=reportKind(a)==='lost'?a:b,found=reportKind(a)==='found'?a:b,lostDay=reportDay(lost),foundDay=reportDay(found);
+  const delta=lostDay===null||foundDay===null?null:foundDay-lostDay;
+  const date=delta===null?null:delta<0?0:Math.round(100*Math.exp(-delta/14));
+  // Fixed documented weights; missing evidence earns no points, not a fabricated match.
+  return {category,location,description,date,total:Math.round(category*.25+(location||0)*.25+(description||0)*.3+(date||0)*.2)};
 }
 function renderMatches() {
   const listEl = document.getElementById('matchList');
@@ -454,18 +470,18 @@ function renderMatches() {
   }
   if (summaryEl) summaryEl.innerHTML = `<div class="form-card" style="margin-bottom:20px">
     <h2>${candidates.length ? `พบ ${candidates.length} รายงานในหมวดเดียวกัน` : 'ยังไม่มีรายงานหมวดเดียวกัน'}</h2>
-    <p class="meta">รายงานที่แชร์บนเว็บและรายงานเก่าบนเครื่องนี้ กรุณาตรวจรูป รายละเอียด และสถานที่ด้วยตัวเอง</p></div>`;
+    <p class="meta">คัดเฉพาะประกาศหาย–พบในหมวดเดียวกันที่ยังไม่ปิดหรือถูกลบ เรียงตามคะแนนข้อมูลจากมากไปน้อย กรุณาตรวจรูปด้วยตัวเอง</p></div>`;
   const ranked = candidates.map(({item}) => ({item, score: matchBreakdown(report, item)}))
-    .sort((a, b) => b.score.total - a.score.total);
+    .sort((a, b) => b.score.total - a.score.total || String(b.item.createdAt||b.item.created_at||b.item.date||'').localeCompare(String(a.item.createdAt||a.item.created_at||a.item.date||'')));
   listEl.innerHTML = ranked.map(({item, score}) => `<article class="match-card">
     <div class="match-photo">${safePhoto(item.photo) ? `<img src="${escapeHTML(safePhoto(item.photo))}" alt="${escapeHTML(item.name)}" style="width:100%;height:100%;object-fit:contain">` : getIcon(item.category)}</div>
     <div style="min-width:0;flex:1"><div class="kicker">POSSIBLE MATCH</div><h3>${escapeHTML(item.name)}</h3>
     <p>${escapeHTML(item.category)} • ${escapeHTML(item.location)} • ${escapeHTML(item.time)}</p>
     <p>${escapeHTML(item.description || '')}</p>
-    <div style="margin:12px 0"><strong style="font-size:26px">${score.total}%</strong> <span class="meta">คะแนนความสอดคล้องของข้อมูล</span>
+    <div style="margin:12px 0"><strong style="font-size:26px">${score.total}/100</strong> <span class="meta">คะแนนความสอดคล้องของข้อมูล</span>
       <div style="height:9px;background:#e9e7e4;border-radius:99px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${score.total}%;background:#ef652f;border-radius:99px"></div></div>
-      <p class="meta" style="margin-top:8px">ประเภท ${score.category}% · สถานที่ ${score.location}% · รายละเอียด ${score.description}%</p>
-      <p class="meta">คะแนนจากข้อมูลรายงาน ไม่ใช่คะแนนความเหมือนของภาพหรือความมั่นใจของ AI</p>
+      <p class="meta" style="margin-top:8px">ประเภท ${score.category}/100 · สถานที่ ${score.location===null?'ไม่มีข้อมูล':score.location+'/100'} · รายละเอียด ${score.description===null?'ไม่มีข้อมูล':score.description+'/100'} · วันที่ ${score.date===null?'ไม่มีข้อมูล':score.date+'/100'}</p>
+      <p class="meta">น้ำหนัก: ประเภท 25 · สถานที่ 25 · รายละเอียด 30 · วันที่ 20 คะแนนนี้ไม่ใช่ความน่าจะเป็นว่าเป็นของชิ้นเดียวกัน และไม่ได้วัดความเหมือนของรูป</p>
     </div>${window.FindMeReports?.contactHTML(item)||''}</div>
     <div><a class="btn btn-light" href="${reportLink(item)}" data-item-details="${escapeHTML(item.id)}">ดูรายละเอียด</a></div>
     </article>`).join('');
@@ -722,3 +738,6 @@ document.addEventListener(
     renderMatches();
   }
 );
+
+
+window.addEventListener('findme-reports-updated',()=>{if(document.getElementById('matchList'))renderMatches();});
