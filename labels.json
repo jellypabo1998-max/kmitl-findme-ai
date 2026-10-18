@@ -1,3 +1,4 @@
+
 {
   "model": "findme-browser-mobilenet-v1",
   "labels": [
@@ -14,13 +15,13 @@
   "categoryMap": {
     "Bag": "Bag",
     "Bottle": "Bottle",
-    "Calculator": "Other",
+    "Calculator": "Calculator",
     "Glasses": "Glasses",
     "Key": "Keys",
     "Laptop": "Laptop",
     "Phone": "Phone",
     "Wallet": "Wallet",
-    "Watch": "Other"
+    "Watch": "Watch"
   },
   "inputSize": 224,
   "mean": [
